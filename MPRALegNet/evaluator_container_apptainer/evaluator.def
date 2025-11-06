@@ -1,0 +1,89 @@
+Bootstrap: docker
+From: python:3.13-slim
+Stage: build
+
+%files
+    MPRALegNet_evaluator_API.py /evaluator_container_apptainer/MPRALegNet_evaluator_API.py
+    config.py /evaluator_container_apptainer/config.py
+    data_loader.py /evaluator_container_apptainer/data_loader.py
+    evaluator_content_handler.py /evaluator_container_apptainer/evaluator_content_handler.py
+    evaluator_metrics_calculator.py /evaluator_container_apptainer/evaluator_metrics_calculator.py
+
+%environment
+    # Prevent automatic binding of host directories
+    export APPTAINER_NO_MOUNT="home,tmp,proc,sys,dev"
+    export LC_ALL=C
+    export PATH="/usr/local/bin:$PATH"
+    export PYTHONPATH="/evaluator_container_apptainer:$PYTHONPATH"
+
+%post
+    echo "Installing system dependencies..."
+    apt-get update && \
+    apt-get install -y --no-install-recommends python3-pip wget bzip2 ca-certificates && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+    echo "Installing Python dependencies..."
+    python -m pip install --upgrade pip
+    python -m pip install --no-cache-dir numpy tqdm pandas msgpack flask requests
+
+    echo "Creating necessary directories..."
+    mkdir -p /evaluator_data
+    mkdir -p /predictions
+
+    echo "Setting permissions for directories and script..."
+    chmod -R 755 /evaluator_container_apptainer
+    chmod 755 /evaluator_container_apptainer/MPRALegNet_evaluator_API.py
+    chmod 755 /evaluator_container_apptainer/config.py
+    chmod 755 /evaluator_container_apptainer/data_loader.py
+    chmod 755 /evaluator_container_apptainer/evaluator_content_handler.py
+    chmod 755 /evaluator_container_apptainer/evaluator_metrics_calculator.py
+
+%runscript
+    exec python3 /evaluator_container_apptainer/MPRALegNet_evaluator_API.py "$@"
+
+%startscript
+    exec python3 /evaluator_container_apptainer/MPRALegNet_evaluator_API.py "$@"
+
+%labels
+    Authors "Nikita Penzin, Dmitry Penzar, Ivan V Kulakovskiy, Ilya Vorontsov"
+    Version "1.0"
+    Description "MPRALegNet Evaluator Container for Genomic Sequence Evaluation"
+
+%help
+    This container includes:
+    - MPRALegNet Evaluator API for genomic sequence evaluation
+    - Utility functions for evaluation process
+    - Installed Python dependencies required by the Evaluator
+    - Dummy evaluation -- Pearson r and cell-type specificity.
+
+    Usage:
+    Build the container (SIF):
+    ```
+    apptainer build evaluator.sif evaluator.def
+    ```
+
+    Run the container with directory binding:
+    ```bash
+    apptainer run \
+      -B absolute/path/to/evaluator_data:/evaluator_data \
+      -B absolute/path/to/predictions:/predictions \
+      evaluator.sif PREDICTOR_HOST PREDICTOR_PORT /predictions
+    ```
+
+    Purpose:
+    - Facilitates genomic sequence evaluation by interacting with the Predictor container
+    - Handles input/output through bound directories
+
+    Example Command:
+    ```bash
+    apptainer run \
+      -B /home/user/MPRALegNet/src/evaluator_container_apptainer/evaluator_data:/evaluator_data \
+      -B /home/user/MPRALegNet/src/evaluator_container_apptainer/predictions:/predictions \
+      evaluator.sif 172.16.47.244 5000 /predictions
+    ```
+
+    Arguments:
+    1. `PREDICTOR_HOST`: IP address or hostname of the Predictor server
+    2. `PREDICTOR_PORT`: Port number the Predictor is listening on
+
+    Note: Ensure the evaluator_data directory contains your input JSON files before running.
