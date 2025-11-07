@@ -1,9 +1,10 @@
 
-# Configuring and Containerizing the CAGI5 challenge data (Kircher et. al (2019) MPRA dataset)
+# Adapting and Containerizing the CAGI5 'regulation saturation' challenge MPRA data (Kircher et. al (2019) MPRA dataset)
 
-## **Overview**
+## Overview
 
-This document outlines the structure of the API codebase for containerizing a MPRA Evaluator from: Kircher, M., Xiong, C., Martin, B. et al. Saturation mutagenesis of twenty disease-associated regulatory elements at single base-pair resolution. Nat Commun 10, 3583 (2019). <https://doi.org/10.1038/s41467-019-11526-w>
+This document outlines the structure of the API codebase for containerizing an MPRA Evaluator using the data from Kircher, M., Xiong, C., Martin, B. et al. Saturation mutagenesis of twenty disease-associated regulatory elements at single base-pair resolution. Nat Commun 10, 3583 (2019). <https://doi.org/10.1038/s41467-019-11526-w>
+
 
 The Evaluator processes genomic variants from multiple human and mouse cell lines, including: 
 - **human hepatocytes (HepG2)** with elements F9, LDLR, LDLR.2, SORT1, SORT1-flip, SORT1.2; 
@@ -23,7 +24,7 @@ The data used in this Evaluator is from https://kircherlab.bihealth.org/satMutMP
 
 ---
 
-## **1. Evaluator Structure**
+## 1. Evaluator Structure
 
 The Kircher (CAGI5) Evaluator is organized as follows:
 
@@ -42,9 +43,9 @@ The Kircher (CAGI5) Evaluator is organized as follows:
 
 ---
 
-## **2. Understanding the REST API**
+## 2. Understanding the REST API
 
-### **2.1. Evaluator REST API**
+### 2.1. Evaluator REST API
 
 - **Purpose**: Interfaces with the Predictor REST API to send genomic sequences and receive predictions. It handles input validation, HTTP communication, and output storage.
 - **Core Script**: `kircher_evaluator.py`.
@@ -72,7 +73,7 @@ The Kircher (CAGI5) Evaluator is organized as follows:
 
 ---
 
-### **Structure of the API JSON Format**
+### Structure of the API JSON Format
 
 The Evaluator sends JSON payloads with the following structure:
 ```json
@@ -96,7 +97,7 @@ The Evaluator sends JSON payloads with the following structure:
 }
 ```
 
-## **3. Configuring and Running the API** 
+## 3. Configuring and Running the API*
 
 ### 3.1 Configuring the Containers Using Definition Files
 
@@ -119,9 +120,9 @@ Definition files provide a declarative way to define:
 3. **Portability**: Allows seamless deployment on various platforms, whether it is local or HPC clusters.
 4. **HTTP Standardization**: REST APIs provide standardized communication between containers.
 
-### **Container Configuration Details**
+### Container Configuration Details
 
-### **Evaluator API Container**
+### Evaluator API Container
 
 1. **Base Image**:
     - `python:3.13-slim` is chosen for its lightweight nature and Python-specific optimizations.
@@ -142,7 +143,7 @@ Definition files provide a declarative way to define:
 
 Once the definition files for the Evaluator and Predictor APIs are configured, the next step is to build the container images using the `apptainer build` command.
 
-### **Steps to Build the Containers**
+### Steps to Build the Containers
 
 1. **Set Up the Definition File**:
     - Ensure that the `.def` file includes all necessary files, directories, and dependencies.
@@ -194,7 +195,7 @@ evaluator_data/
     └── ...
 ```
 
-### **⚠️ Permissions Management ⚠️**
+### ⚠️ Permissions Management ⚠️
 
 If you encounter permission errors during container build or execution:
 
@@ -210,7 +211,7 @@ If you encounter permission errors during container build or execution:
 
 ---
 
-### **3.3. Running the Evaluator API**
+### 3.3. Running the Evaluator API
 
 1. **Start the Predictor First**: Ensure the Predictor container is running and accessible via REST API.
 

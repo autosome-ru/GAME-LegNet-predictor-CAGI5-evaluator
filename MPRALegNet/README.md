@@ -1,13 +1,13 @@
-# Configuring and Containerizing the MPRALegNet Model with Genomic Model Evaluation API
+# Adapting and Containerizing the MPRALegNet Model for Genomic Model Evaluation API
 
 ## **Overview**
 
-MPRALegNet is a comprehensive framework for genomic sequence expression prediction and model evaluation. This repository contains both the MPRALegNet deep learning model for predicting gene expression levels from DNA sequences and a testing evaluator for validating model performance within the Genomic API for Model Evaluation (GAME) ecosystem.
+This repository contains both the implementation of the MPRALegNet CNN model for predicting regulatory sequence activity from DNA sequences and a dummy evaluator to ensure the model works correctly and its performance can be evaluated within the Genomic API for Model Evaluation (GAME) ecosystem.
 
 The framework provides:
-- **MPRALegNet Predictor**: A containerized deep learning model that predicts gene expression from DNA sequences
-- **Test Evaluator**: A containerized testing framework that validates predictor functionality and calculates fake metrics
-- **REST API Integration**: Standardized API endpoints for seamless communication between components
+- **MPRALegNet Predictor**: A containerized deep learning model that predicts regulatory sequence activity from DNA sequences
+- **Test Evaluator**: A containerized testing framework that formally validates the technical predictor functionality and reports fake performance metrics.
+- **REST API Integration**: Standardized API endpoints for seamless communication between components.
 
 ---
 
@@ -53,11 +53,11 @@ MPRALegNet/
 
 ---
 
-# Quick Start: Running MPRALegNet with Sample Data
+# Quick Start: Running MPRALegNet with the Demo Data
 
 ## Prerequisites
 
-- Apptainer installed on your system
+- Apptainer installed in the host OS
 
 - Network access for downloading container images and model weights
 
@@ -157,7 +157,7 @@ ls -la predictions/
 
 - **Input**: DNA sequences (200-2000 base pairs)
 
-- **Output**: Log-scale expression predictions
+- **Output**: Log-scale regulatory sequence activity predictions
 
 - **API Formats**: JSON and MessagePack support
 

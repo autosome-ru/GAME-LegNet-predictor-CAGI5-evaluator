@@ -1,4 +1,4 @@
-# Configuring Definition File and Running Evaluator Container for MPRALegNet
+# Configuring the Definition File and Running the Evaluator Container for MPRALegNet
 
 ## Overview
 

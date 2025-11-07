@@ -1,11 +1,11 @@
-# Configuring Definition File and Running Predictor Container for MPRALegNet
+# Configuring the Definition File and Running the Predictor Container for MPRALegNet
 
 ## Overview
 
-This container provides a complete MPRALegNet Predictor implementation for genomic sequence expression prediction. The container includes:
+This container provides a complete MPRALegNet Predictor implementation for regulatory sequence activity prediction. The container includes:
 
 - **REST API Server**: Flask-based API for handling prediction requests
-- **MPRALegNet Model**: Pre-trained deep learning model for gene expression prediction
+- **MPRALegNet Model**: Pre-trained deep learning model for regulatory sequence activity prediction
 - **Sequence Processing**: Comprehensive preprocessing pipeline for DNA sequences
 - **Error Handling**: Robust validation and error reporting
 - **Dependencies**: Complete Conda environment with all required packages
@@ -82,7 +82,7 @@ apptainer run --containall legnet_predictor.sif 127.0.0.1 5000
 
 - Input: DNA sequences (200-2000 base pairs)
 
-- Output: Log-scale expression predictions
+- Output: Log-scale regulatory sequence activity predictions
 
 - Supported Cell Types: K562, HepG2, WTC11
 
