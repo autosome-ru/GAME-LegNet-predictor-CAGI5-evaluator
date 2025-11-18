@@ -49,7 +49,7 @@ MPRALegNet/
         │   ├── schema_validation.py               # Request validation functions
         │   ├── error_checking_functions.py        # Error checking utilities
         │   ├── predictor_content_handler.py       # Content negotiation handlers
-        │   └── predictor_help_message.json        # Help messsage file
+        │   └── predictor_help_message.json        # Help message file
 ```
 
 ---
@@ -74,17 +74,17 @@ mkdir MPRALegNet
 cd MPRALegNet
 
 # Download predictor container from Hugging Face
-wget -O legnet_predictor.sif "<PREDICTOR_Hugging Face_LINK>"
+wget -O legnet_predictor.sif "https://huggingface.co/Ni-os/MPRALegNet-container/resolve/main/legnet_predictor.sif?download=true"
 
 # Create test evaluator directory
 mkdir test_evaluator
 cd test_evaluator
 
 # Download evaluator container Hugging Face
-wget -O legnet_evaluator.sif "<EVALUATOR_Hugging Face_LINK>"
+wget -O legnet_evaluator.sif "https://huggingface.co/Ni-os/MPRALegNet-container/resolve/main/legnet_evaluator.sif?download=true"
 
 # Download test dataset
-wget -O evaluator_data.zip "<DATA_Hugging Face_LINK>"
+wget -O evaluator_data.zip "https://huggingface.co/Ni-os/MPRALegNet-container/resolve/main/evaluator_data.zip?download=true"
 unzip evaluator_data.zip
 
 # Create output directory for predictions
@@ -225,7 +225,7 @@ apptainer run --nv legnet_predictor.sif 172.16.47.xxx 5000
 
 1. Connection Refused
 
-    - Verify predictor is running before starting evaluator
+    - Verify whether the Predictor is running before starting the Evaluator
 
     - Check firewall settings and port availability
 

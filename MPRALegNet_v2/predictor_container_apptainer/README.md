@@ -11,12 +11,13 @@ This container provides a complete MPRALegNet Predictor implementation for regul
 - **Dependencies**: Complete Conda environment with all required packages
 
 > **Note**: The Conda environment (`legnet_environment.yml`) excludes PyTorch due to container build conflicts. PyTorch is installed manually in the container definition file.
+- Pretrained model weights used in this framework were downloaded from https://zenodo.org/records/10558183
 
 ## Usage
 
 ### Using Pre-built Containers
 
-We recommend using the pre-built containers hosted on Hugging Face for immediate use: **[HG Link]**
+For immediate use, we recommend using the pre-built containers hosted on Hugging Face: https://huggingface.co/Ni-os/MPRALegNet-container
 
 ### Building from Source
 
@@ -38,7 +39,7 @@ If you need to build the container locally, ensure you have the following direct
     │   ├── schema_validation.py               # Request validation functions
     │   ├── error_checking_functions.py        # Error checking utilities
     │   ├── predictor_content_handler.py       # Content negotiation handlers
-    │   └── predictor_help_message.json        # Help messsage file
+    │   └── predictor_help_message.json        # Help message file
 ```
 
 ## Network Configuration

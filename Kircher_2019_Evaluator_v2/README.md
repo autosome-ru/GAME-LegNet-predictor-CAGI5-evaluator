@@ -1,5 +1,5 @@
 
-# Adapting and Containerizing the CAGI5 'regulation saturation' challenge MPRA data (Kircher et. al (2019) MPRA dataset)
+# Adapting and containerizing the CAGI5 'regulation saturation' challenge MPRA data (Kircher et. al (2019) MPRA dataset) for GAME
 
 ## Overview
 
@@ -7,32 +7,32 @@ This document outlines the structure of the API codebase for containerizing an M
 
 
 The Evaluator processes genomic variants from multiple human and mouse cell lines, including: 
-- **human hepatocytes (HepG2)** with elements F9, LDLR, LDLR.2, SORT1, SORT1-flip, SORT1.2; 
-- **human erythroleukemia cells (HEL92.1.7)** with elements GP1BA, HBB, HBG1, BCL11A; 
-- **human embryonic kidney cells (HEK293T)** with elements HNF4A, MSMB, MYCrs6983267, TERT-HEK;
-- **lymphoblasts (K562)** with elements PKLR-24h, PKLR-48h;
-- **glioblastoma cells (SF7996)** with elements TERT-GAa, TERT-GBM, TERT-GSc; 
-- **cervical adenocarcinoma cells (HeLa)** with element FOXE1; 
-- **melanoma cells (SK-MEL-28)** with element IRF4; 
-- **keratinocytes (HaCaT)** with element IRF6; 
-- **prostate adenocarcinoma cells (LNCaP)** with element MYCrs11986220; 
-- **mouse neuroblastoma cells (Neuro-2a)** with elements RET, UC88; 
-- **mouse insulinoma cells (MIN6)** with elements TCF7L2, ZFAND3; 
-- and **mouse embryonic fibroblasts (NIH-3T3)** with elements ZRSh-13, ZRSh-13h2.
+- **HepG2 (human hepatocarcinoma)** with promoters (F9, LDLR, LDLR.2) and enhancer (SORT1, SORT1-flip, SORT1.2); 
+- **HEL92.1.7 (human erythroleukemia)** with promoters (GP1BA, HBB, HBG1) and enhancer (BCL11A); 
+- **HEK293T (human embryonic kidney)** with promoters (HNF4A, MSMB, TERT-HEK) and enhancer (MYCrs6983267);
+- **K562 (human myeloid leukemia)** with promoter (PKLR-24h, PKLR-48h);
+- **SF7996 (human glioblastoma cells)** with promoter (TERT-GAa, TERT-GBM, TERT-GSc); 
+- **HeLa (human cervical adenocarcinoma)** with promoter (FOXE1); 
+- **SK-MEL-28 (human melanoma)** with enhancer (IRF4); 
+- **HaCaT (human keratinocytes)** with enhancer (IRF6); 
+- **LNCaP (human prostate adenocarcinoma)** with enhancer (MYCrs11986220); 
+- **Neuro-2a (mouse neuroblastoma cells)** with enhancers (RET, UC88); 
+- **MIN6 (mouse insulinoma cells)** with enhancers (TCF7L2, ZFAND3); 
+- and **NIH-3T3 (mouse embryonic fibroblasts)** with enhancer (ZRSh-13, ZRSh-13h2).
 
-The data used in this Evaluator is from https://kircherlab.bihealth.org/satMutMPRA/ and can also be found on [Github](https://github.com/visze/sequence_cnn_models/tree/master/resources/satmut_examples). The Evaluator implements a REST API that communicates with machine learning predictors to evaluate variant effects and calculate correlation metrics between predicted and experimental measurements.
+The data used in this Evaluator were downloaded from https://kircherlab.bihealth.org/satMutMPRA/ and can also be found on [GitHub](https://github.com/visze/sequence_cnn_models/tree/master/resources/satmut_examples). The Evaluator implements a REST API that communicates with Predictor to evaluate variant effects and calculate the correlation metrics between predicted and experimental measurements.
 
-Each promoter region is extracted with 500 kb flanks by default (resulting in a total reference genomic sequence length around of 1 Mb). If you require longer genomic windows, please run the preprocessing script `create_evaluator_data.ipynb` with your desired parameters.
+The sequences of promoter and enhancer regions are extracted with 500 kb flanks by default (resulting in a total reference genomic sequence of nearly 1 Mb). For evaluating models which consider longer genomic windows, the preprocessing script `create_evaluator_data.ipynb` can be rerun with the desired parameters.
 
 ---
 
 ### Using Pre-built Containers
 
-We recommend using the pre-built containers hosted on Hugging Face for immediate use: **[HG Link]**
+For immediate use, we recommend using the pre-built containers hosted on Hugging Face: https://huggingface.co/datasets/Ni-os/Kircher-container
 
 ## 1. Evaluator Structure
 
-The Kircher (CAGI5) Evaluator is organized as follows:
+The Kircher (2019) Evaluator is organized as follows:
 
 ```
 /path/to/Kircher_2019_Evaluator/
@@ -61,16 +61,16 @@ The Kircher (CAGI5) Evaluator is organized as follows:
         - Adjusts paths to input (`EVALUATOR_DATA_DIR`) accordingly.
     2. **JSON Payload Creation**:
         - Reads .tsv files from `/evaluator_data` using pandas.
-        - Extracts genomic sequences from reference genome (hg38).
-        - Creates structured JSON payload with prediction tasks and sequences.
+        - Extracts genomic sequences from the reference genome (hg38).
+        - Creates a structured JSON payload with prediction tasks and sequences.
         - Validates unique sequence keys to prevent JSON parsing issues.
     3. **REST API Communication**:
-        - Establishes HTTP connection with Predictor server.
-        - Negotiates data formats (JSON/MessagePack) with predictor.
+        - Establishes an HTTP connection with the Predictor server.
+        - Negotiates data formats (JSON/MessagePack) with the predictor.
         - Sends POST requests with genomic data and processes responses.
-        - Handles both successful (200 OK) and error (4xx/5xx) responses.
+        - Handles successful (200 OK) and error (4xx/5xx) responses.
     4. **Data Processing**:
-        - Calculates log2 fold changes in reference and alternative sequences.
+        - Estimates the log2 fold changes between the reference and alternative alleles.
         - Computes the Pearson correlation coefficient between the predicted and experimentally measured variant effects for each regulatory element, separately for each element
         - Supports both linear-scale and log-scale model outputs.
     5. **Output Management**:
@@ -103,15 +103,15 @@ The Evaluator sends JSON payloads with the following structure:
 }
 ```
 
-## 3. Configuring and Running the API*
+## 3. Configuring and Running the API Services
 
 ### 3.1 Configuring the Containers Using Definition Files
 
-Containerizing the Evaluator involves creating **definition (.def) files** that specify the structure, dependencies, and environment of the container. This ensures a consistent and reproducible environment for running the Predictor and Evaluator APIs.
+Containerizing the Evaluator involves creating **definition (.def) files** that specify the structure, dependencies, and environment of the container. This ensures a consistent and reproducible environment for running the Predictor and Evaluator services.
 
-### **Purpose of [Definition Files](https://apptainer.org/docs/user/latest/definition_files.html)**
+### **Purpose of the [Definition Files](https://apptainer.org/docs/user/latest/definition_files.html)**
 
-Definition files provide a declarative way to define:
+The definition files provide a declarative way to define:
 
 1. **Base Image**: The starting point of the container (e.g., ubuntu or python:3.13-slim).
 2. **File Structure**: Which files to copy into the container during build and which directories to bind/mount at runtime.
@@ -136,15 +136,15 @@ Definition files provide a declarative way to define:
 2. **File Inclusions**:
     - **Core Script**: All Python modules are copied into `/Kircher_2019_Evaluator/` in the container.
     - **Dynamic Mounting**: Input (`/evaluator_data`) and output (`/predictions`) directories are mounted at runtime to allow flexibility in handling data without modifying the container.
-3. **Dependencies**:
+3. **Sequence Extraction Parameters**:
+    - Promoter and enhancer regions are extracted with 500 kb flanks by default, resulting in total genomic sequences of approximately 1 Mb.
+    - For models requiring longer genomic contexts, use the preprocessing script `create_evaluator_data.ipynb` to regenerate data with custom window sizes.
+4. **Dependencies**:
     - Installs required Python packages for genomic data processing and HTTP communication.
-    - Includes pyfastx for reference genome sequence extraction.
-4. **Runtime Needs**:
+    - Includes **pyfastx** for reference genome sequence extraction.
+5. **Runtime Needs**:
     - **Mounted Directories**: Binds host directories to `/evaluator_data` (input) and `/predictions` (output).
     - **HTTP Communication**: Connects to Predictor via REST API on specified host and port.
-5. **Genomic Window Specification**:
-    - Each promoter region is extracted with 500 kb flanks by default, resulting in total reference genomic sequences of approximately 1 Mb.
-    - For custom genomic window sizes or different flanking regions, use the Jupyter notebook `create_evaluator_data.ipynb` to generate data with your desired parameters before running the container.
 
 ---
 
@@ -157,7 +157,7 @@ Once the definition files for the Evaluator and Predictor APIs are configured, t
 1. **Set Up the Definition File**:
     - Ensure that the `.def` file includes all necessary files, directories, and dependencies.
     - Files are copied into the container using the `%files` section.
-    - Specific environment specific variables are listed in the  `%enviroment`  section
+    - Environment-specific variables are listed in the  `%enviroment`  section.
     - Key configurations like `chmod` for full directory and file access are defined in the `%post` section. Dependencies are installed in this section.
     - Execution commands are defined in the `%runscript` section.
     - Metadata and help information are included in `%labels` and `%help` sections.
@@ -167,7 +167,6 @@ Once the definition files for the Evaluator and Predictor APIs are configured, t
 
     ```bash
         cd Kircher_2019_Evaluator
-
         apptainer build kircher_evaluator.sif kircher_evaluator.def
     ```
 
@@ -208,7 +207,7 @@ evaluator_data/
 
 If you encounter permission errors during container build or execution:
 
-- During container build, ensure directories and files have correct permissions using `chmod` in the `%post` section:
+- During container build phase, ensure that the directories and files have correct permissions using `chmod` in the `%post` section:
 
 ```bash
     chmod -R 755 /Kircher_2019_Evaluator
@@ -252,13 +251,13 @@ If you encounter permission errors during container build or execution:
 
 The Evaluator will:
 
-- Process all cell type and element combinations
+- Process all cell types and corresponding elements;
 
-- Supports hg38 reference genome
+- Extract sequences from hg38 reference genome (200 nt long by default);
 
-- Send sequences to Predictor via REST API
+- Send sequences to Predictor via REST API;
 
-- Calculate Pearson correlations between predictions and experimental values
+- Calculate Pearson correlations between predictions and experimental values;
 
 - Generate output files in the predictions directory:
 

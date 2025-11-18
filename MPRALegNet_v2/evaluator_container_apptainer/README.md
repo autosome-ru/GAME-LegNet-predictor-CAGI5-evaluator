@@ -8,7 +8,7 @@ This container includes:
 
 ## Usage
 
-We encourage using pre-built containers for this model that are hosted on Hugging Face: **[HG link]**.
+We encourage using pre-built containers for this model that are hosted on Hugging Face: https://huggingface.co/Ni-os/MPRALegNet-container.
 
 However, if you are building the container using the provided definition file, ensure you have the following directory structure on the host:
 
