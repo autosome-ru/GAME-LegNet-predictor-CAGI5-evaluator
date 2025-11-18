@@ -1,0 +1,2 @@
+Evaluator	Description	Predictor_name	Time_stamp	Cell_Type_requested	Cell_Type_actual	Element	Metric	Value	Prediction_task(s)_data
+Kircher	Kircher Variant Effects (IRF6)	MPRALegNet	20251118-161532.811203	keratinocytes (HaCaT)	K562	IRF6	pearson_r	0.11490094519077279	{'name': 'Kircher_IRF6', 'type_requested': 'expression', 'type_actual': 'expression', 'cell_type_requested': 'keratinocytes (HaCaT)', 'cell_type_actual': 'K562', 'scale_prediction_requested': 'log', 'scale_prediction_actual': 'log', 'species_requested': 'homo_sapiens', 'species_actual': 'homo_sapiens'}
