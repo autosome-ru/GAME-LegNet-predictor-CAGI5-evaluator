@@ -1,0 +1,178 @@
+Bootstrap: docker
+From: nvidia/cuda:11.8.0-runtime-ubuntu20.04
+Stage: build
+
+%files
+    script_and_utils/weights/k562_best_model_test1_val2.ckpt /script_and_utils/weights/k562_best_model_test1_val2.ckpt
+    script_and_utils/weights/hepg2_best_model_test1_val2.ckpt /script_and_utils/weights/hepg2_best_model_test1_val2.ckpt
+    script_and_utils/weights/wtc11_best_model_test1_val2.ckpt /script_and_utils/weights/wtc11_best_model_test1_val2.ckpt
+    script_and_utils/MPRALegNet_predict.py /script_and_utils/MPRALegNet_predict.py
+    script_and_utils/model.py /script_and_utils/model.py
+    script_and_utils/MPRALegNet_predictor_API.py /script_and_utils/MPRALegNet_predictor_API.py
+    script_and_utils/api_preprocessing_utils.py /script_and_utils/api_preprocessing_utils.py
+    script_and_utils/error_checking_functions.py /script_and_utils/error_checking_functions.py
+    script_and_utils/predictor_content_handler.py /script_and_utils/predictor_content_handler.py
+    script_and_utils/predictor_help_message.json /script_and_utils/predictor_help_message.json
+    script_and_utils/schema_validation.py /script_and_utils/schema_validation.py
+    legnet_environment.yml /legnet_environment.yml
+
+%environment
+    # Prevent binding of host directories by default
+    export APPTAINER_NO_MOUNT="home,tmp,proc,sys,dev"
+    export LC_ALL=C
+    export PATH="/opt/conda/envs/legnet/bin:$PATH"
+    export LD_LIBRARY_PATH="/opt/conda/envs/legnet/lib:$LD_LIBRARY_PATH"
+
+%post
+    echo "Installing system dependencies..."
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        wget bzip2 ca-certificates \
+        build-essential \
+        curl && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+    echo "Setting up Miniconda..."
+    mkdir -p /opt && \
+    wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh && \
+    bash /tmp/miniconda.sh -b -p /opt/conda && \
+    rm -rf /tmp/miniconda.sh
+
+    echo "Initializing Conda..."
+    export PATH="/opt/conda/bin:$PATH"
+    . /opt/conda/etc/profile.d/conda.sh
+
+    echo "Accepting ToS"
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
+    conda config --set remote_connect_timeout_secs 30
+    conda config --set remote_read_timeout_secs 120
+
+    echo "Creating Conda environment 'legnet'..."
+    until conda env create -f /legnet_environment.yml --verbose -y; do
+        echo "Conda failed, retrying in 10 seconds..."
+        sleep 10
+    done
+
+    echo "Installing PyTorch with CUDA 11.8..."
+    conda activate legnet
+    
+    pip install --no-cache-dir torch==2.0.0+cu118 --index-url https://download.pytorch.org/whl/cu118
+    pip install --no-cache-dir torchvision==0.15.1+cu118 --index-url https://download.pytorch.org/whl/cu118
+    pip install --no-cache-dir torchaudio==2.0.1+cu118 --index-url https://download.pytorch.org/whl/cu118
+    
+    pip install --no-cache-dir numpy tqdm msgpack flask
+    pip cache purge
+
+    echo "Verifying Conda environment creation..."
+    if ! conda env list | grep -q legnet; then
+        echo "Error: Conda environment 'legnet' was not created successfully."
+        exit 1
+    fi
+
+    echo "Setting permissions..."
+    chmod -R 755 /script_and_utils /opt/conda
+    chmod +x /opt/conda/envs/legnet/bin/python3
+
+    echo "Cleaning up temporary files..."
+    rm -rf /legnet_environment.yml
+    conda clean --all --yes
+
+%runscript
+    export PATH="/opt/conda/envs/legnet/bin:$PATH"
+    exec python3 /script_and_utils/MPRALegNet_predictor_API.py "$@"
+
+%startscript
+    export PATH="/opt/conda/envs/legnet/bin:$PATH"
+    exec python3 /script_and_utils/MPRALegNet_predictor_API.py "$@"
+
+%labels
+    Authors "Nikita Penzin, Dmitry Penzar, Ivan V Kulakovskiy, Ilya Vorontsov"
+    Version "1.0"
+    Description "MPRALegNet Predictor Container for Genomic Sequence Expression Prediction"
+    Model "MPRALegNet"
+    Framework "PyTorch with CUDA support"
+    Supported_Cell_Types "K562, HepG2, WTC11"
+    
+%help
+    MPRALegNet Predictor Container for Genomic API for Model Evaluation
+    
+    This container provides a REST API for predicting regulatory element activity from DNA sequences
+    using the MPRALegNet deep learning model. The predictor supports multiple human cell types
+    and processes genomic sequences through a complete preprocessing and inference pipeline.
+
+    CONTAINER CONTENTS:
+    - MPRALegNet model implementation with pre-trained weights for K562, HepG2, and WTC11 cell lines
+    - REST API server built with Flask for handling prediction requests
+    - Sequence preprocessing utilities for adapter handling, padding, and one-hot encoding
+    - Comprehensive error handling and request validation
+    - Conda environment with all required dependencies (PyTorch, CUDA, Flask, etc.)
+
+    MODEL SPECIFICATIONS:
+    - Architecture: MPRALegNet deep learning model
+    - Input: DNA sequences (200-2000 base pairs)
+    - Output: Log-scale expression predictions
+    - Supported formats: JSON and MessagePack
+    - Cell types: K562 (lymphoblasts), HepG2 (hepatocytes), WTC11 (stem cells)
+
+    REQUIRED DIRECTORY STRUCTURE ON HOST:
+    ```
+    /path/to/MPRALegNet/src/predictor_container_apptainer/
+    ├── predictor.def                          # This definition file
+    ├── legnet_environment.yml                 # Conda environment specification
+    ├── script_and_utils/
+    |   ├── weights/
+    |   |   ├── hepg2_best_model_test1_val2.ckpt # model weights
+    |   |   ├── k562_best_model_test1_val2.ckpt
+    |   |   └── wtc11_best_model_test1_val2.ckpt
+    │   ├── MPRALegNet_predictor_API.py        # Main Flask API server
+    │   ├── MPRALegNet_predict.py              # Model prediction functions
+    │   ├── model.py                           # LegNet model architecture
+    │   ├── api_preprocessing_utils.py         # Sequence preprocessing utilities
+    │   ├── schema_validation.py               # Request validation functions
+    │   ├── error_checking_functions.py        # Error checking utilities
+    │   ├── predictor_content_handler.py       # Content negotiation handlers
+    │   └── predictor_help_message.json        # Help messsage file
+    ```
+
+    BUILDING THE CONTAINER:
+    ```bash
+    apptainer build legnet_predictor.sif predictor.def
+    ```
+
+    RUNNING THE CONTAINER:
+    ```bash
+    apptainer run legnet_predictor.sif HOST_IP PORT_NUMBER
+    ```
+
+    NETWORK CONFIGURATION:
+    - The predictor runs as a Flask web server listening on the specified host and port
+    - Ensure the specified port is available and accessible for incoming connections
+
+    EXAMPLE USAGE:
+    ```bash
+    # Run on localhost port 5000
+    apptainer run legnet_predictor.sif 127.0.0.1 5000
+    
+    # Run on specific IP and port
+    apptainer run legnet_predictor.sif 172.16.47.244 5000
+    
+    # Run with GPU access (if available)
+    apptainer run --nv legnet_predictor.sif 172.16.47.244 5000
+    ```
+
+    API ENDPOINTS:
+    - GET  /help     - Returns API documentation and metadata
+    - GET  /formats  - Returns supported request/response formats
+    - POST /predict  - Main prediction endpoint for sequence analysis
+
+    DEPENDENCIES:
+    - CUDA 11.8 for GPU acceleration (falls back to CPU if unavailable)
+    - PyTorch for model inference
+    - Flask for REST API server
+    - NumPy, SciPy for numerical computations
+
+    SECURITY NOTES:
+    - Container runs with isolated filesystem and no host directory mounts by default
+    - No root access inside container

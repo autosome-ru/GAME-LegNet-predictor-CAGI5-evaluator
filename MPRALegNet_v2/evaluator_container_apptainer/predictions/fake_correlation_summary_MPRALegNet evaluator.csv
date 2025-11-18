@@ -1,0 +1,2 @@
+Evaluator	Description	Predictor_name	Time_stamp	Metric	Value	Prediction_task(s)_data
+MPRALegNet evaluator	MPRALegNet Test Evaluator (HEPG2)	MPRALegNet	2025-11-07T08:56:36.934239+00:00	pearson_r	0.9745136725087997	[{'name': 'task_for_model', 'type_requested': 'expression', 'type_actual': 'expression', 'cell_type_requested': 'HEPG2', 'cell_type_actual': 'HepG2', 'scale_prediction_requested': 'linear', 'scale_prediction_actual': 'log', 'species_requested': 'homo_sapiens', 'species_actual': 'homo_sapiens'}]
