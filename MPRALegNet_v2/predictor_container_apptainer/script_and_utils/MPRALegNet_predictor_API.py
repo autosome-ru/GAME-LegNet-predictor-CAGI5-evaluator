@@ -172,7 +172,10 @@ def predict():
                     current_cell_type = possible_cell_type
                     
             # Default output scale (MPRALegNet model was trained on log2(RNA/DNA))
-            current_scale = task["scale"] if "scale" in task else "log"
+            if task["scale"] in ["log", "linear"]:
+                current_scale = task["scale"]
+            else:
+                current_scale = "log"
 
             # Run model inference based on readout type
             if readout_type == "point":
