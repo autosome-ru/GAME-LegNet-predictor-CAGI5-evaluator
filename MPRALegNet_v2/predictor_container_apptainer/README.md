@@ -42,6 +42,12 @@ If you need to build the container locally, ensure you have the following direct
     │   └── predictor_help_message.json        # Help message file
 ```
 
+### Build the container (SIF)
+
+```bash
+apptainer build legnet_predictor.sif predictor.def
+```
+
 ## Network Configuration
 
 - The container operates as a REST API server and does not require mounted data directories
@@ -84,9 +90,9 @@ apptainer run --containall legnet_predictor.sif 127.0.0.1 5000
 
 ## Model Specifications
 
-- Input: DNA sequences (200-2000 base pairs)
+- Input: DNA sequences (200-2000 base pairs, 200 by default)
 
-- Output: Log-scale regulatory sequence activity predictions
+- Output: Linear or log-scale regulatory sequence activity predictions (log by default)
 
 - Supported Cell Types: K562, HepG2, WTC11
 

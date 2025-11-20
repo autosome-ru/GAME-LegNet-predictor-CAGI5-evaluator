@@ -120,7 +120,7 @@ downstream_adapter_seq = "CATTGCGTGAACCGA"
 
 
 # Updated Prediction Function
-def predict_legnet(sequences, cell_type, window_step=50):
+def predict_legnet(sequences, cell_type, scale, window_step=50):
     """
     Predict expression values using the MPRALegNet model for genomic sequences.
     
@@ -133,6 +133,7 @@ def predict_legnet(sequences, cell_type, window_step=50):
     Args:
         sequences (dict): Dictionary mapping sequence IDs to DNA sequence strings
         cell_type (str): Target cell type for prediction ("k562", "hepg2", or "wtc11")
+        scale (str): Requested scale. 'log' or 'linear'
         window_step (int): Step size for sliding window processing of long sequences (>200bp)
     
     Returns:
@@ -202,9 +203,16 @@ def predict_legnet(sequences, cell_type, window_step=50):
         if window_predictions:
             # Average predictions across all windows to get final sequence prediction
             avg_prediction = np.mean(window_predictions, axis=0).tolist()
+            
+            # Convert to linear scale if requested
+            if scale == 'linear':
+                # Since model was trained on log2(RNA/DNA), convert back using 2^prediction
+                avg_prediction = [2**x for x in avg_prediction]
+            
             predictions[seq_id] = avg_prediction
         else:
             # Fallback for edge case with no predictions
-            predictions[seq_id] = [0.0]
+            fallback_value = 0.0 if scale == 'log' else 1.0  # 2^0 = 1 in linear scale
+            predictions[seq_id] = [fallback_value]
 
     return predictions

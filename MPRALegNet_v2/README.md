@@ -156,9 +156,9 @@ ls -la predictions/
 
 - **Supported Cell Types**: K562 (lymphoblasts), HepG2 (hepatocytes), WTC11 (stem cells)
 
-- **Input**: DNA sequences (200-2000 base pairs)
+- **Input**: DNA sequences (200-2000 base pairs, 200 by default)
 
-- **Output**: Log-scale regulatory sequence activity predictions
+- **Output**: Linear or log-scale regulatory sequence activity predictions (log-scale by default)
 
 - **API Formats**: JSON and MessagePack support
 

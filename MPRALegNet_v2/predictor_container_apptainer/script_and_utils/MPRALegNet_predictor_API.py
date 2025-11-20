@@ -163,18 +163,22 @@ def predict():
 
         # Process each prediction task in the request
         for task in evaluator_request["prediction_tasks"]:
-            # Determine cell type for model selection
+            # Determine cell type and scale for model selection
             # MPRALegNet supports K562, HepG2, and WTC11 cell types
             current_cell_type = "K562"  # Default fallback
+            
             for possible_cell_type in ["K562", "HepG2", "WTC11"]:
                 if possible_cell_type.lower() in task["cell_type"].lower():
                     current_cell_type = possible_cell_type
+                    
+            # Default output scale (MPRALegNet model was trained on log2(RNA/DNA))
+            current_scale = task["scale"] if "scale" in task else "log"
 
             # Run model inference based on readout type
             if readout_type == "point":
                 # Call MPRALegNet prediction function with sequences and cell type
                 # Uses sliding window with 50bp step for long sequences
-                model_predictions = predict_legnet(sequences, current_cell_type, 50)
+                model_predictions = predict_legnet(sequences, current_cell_type, current_scale, 50)
             else:
                 # MPRALegNet only supports "point" readout type
                 raise PredictionFailedError(
@@ -190,7 +194,7 @@ def predict():
                     "cell_type_requested": task["cell_type"],      # Requested cell type
                     "cell_type_actual": current_cell_type,         # Actual cell type used
                     "scale_prediction_requested": task["scale"],   # Requested output scale
-                    "scale_prediction_actual": "log",              # Actual output scale (MPRALegNet returns log-scale)
+                    "scale_prediction_actual": current_scale,      # Current output scale
                     "species_requested": task["species"],          # Requested species
                     "species_actual": "homo_sapiens",              # Actual species (MPRALegNet is human-specific)
                     "predictions": model_predictions,              # Model predictions dictionary
