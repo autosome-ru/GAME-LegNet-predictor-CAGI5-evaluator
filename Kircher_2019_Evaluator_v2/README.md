@@ -236,37 +236,52 @@ If you encounter permission errors during container build or execution:
     - `PREDICTOR_HOST`: IP address or hostname of the Predictor REST API server.
     - `PREDICTOR_PORT`: Port number for the Predictor API (typically 5000)
     - `/predictions`: Container path for output predictions (mounted from host)
-    - `--sequence-length` or `-l`: The length of extracted sequences. Default is 200
 
     **Example**:
 
-        ```bash
-        apptainer run \
-            -B /home/user/evaluator_data:/evaluator_data \
-            -B /home/user/predictions:/predictions \
-            kircher_evaluator.sif 172.17.0.2 5000 /predictions --sequence-length 300
-        ```
+    ```bash
+    apptainer run \
+        -B /home/user/evaluator_data:/evaluator_data \
+        -B /home/user/predictions:/predictions \
+        kircher_evaluator.sif 172.17.0.2 5000 /predictions
+    ```
 
 4. **Expected Output**:
 
-The Evaluator will:
+    The Evaluator will:
 
-- Process all cell types and corresponding elements;
+    - Process all cell types and corresponding elements;
 
-- Extract sequences from hg38 reference genome (200 nt long by default);
+    - Extract sequences from hg38 reference genome (200 nt long by default);
 
-- Send sequences to Predictor via REST API;
+    - Send sequences to Predictor via REST API;
 
-- Calculate Pearson correlations between predictions and experimental values;
+    - Calculate Pearson correlations between predictions and experimental values;
 
-- Generate output files in the predictions directory:
+    - Generate output files in the predictions directory:
 
-    - Raw predictions: `{cell_type}_cell_type_{element}_element_*_predictions.json`
+        - Raw predictions: `{cell_type}_cell_type_{element}_element_*_predictions.json`
 
-    - Correlation summary: `correlation_summary_Kircher_{timestamp}.tsv`
+        - Correlation summary: `correlation_summary_Kircher_{timestamp}.tsv`
 
 5. **Verify Successful Execution**:
 
-Check the predictions directory for output files and review the correlation summary for evaluation results.
+    Check the predictions directory for output files and review the correlation summary for evaluation results.
+
+6. **Using the Evaluator with Predictors requiring other sequence lengths**
+
+    To allow for compatibility with Predictors which cannot directly handle default sequence lengths of 200bps, the Evaluator can be executed by specifying the custom window size using `--sequence-length` parameter
+
+    - `--sequence-length` or `-l`: The length of extracted sequences. Default is 200.
+
+    **Example**:
+
+    ```bash
+    apptainer run \
+        -B /home/user/evaluator_data:/evaluator_data \
+        -B /home/user/predictions:/predictions \
+        kircher_evaluator.sif 172.17.0.2 5000 /predictions --sequence-length 300
+    ```
+
 
 ---
