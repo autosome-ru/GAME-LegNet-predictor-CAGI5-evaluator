@@ -268,20 +268,22 @@ If you encounter permission errors during container build or execution:
 
     Check the predictions directory for output files and review the correlation summary for evaluation results.
 
-6. **Using the Evaluator with Predictors requiring other sequence lengths**
+## 4. EXTRAS
+ 
+### 4.1 **Using the Evaluator with Predictors requiring other sequence lengths**
 
-    To allow for compatibility with Predictors which cannot directly handle default sequence lengths of 200bps, the Evaluator can be executed by specifying the custom window size using `--sequence-length` parameter
+To allow for compatibility with Predictors which cannot directly handle default sequence lengths of 200bps, the Evaluator can be executed by specifying the custom window size using `--sequence-length` parameter
 
-    - `--sequence-length` or `-l`: The length of extracted sequences. Default is 200.
+- `--sequence-length` or `-l`: The length of extracted sequences. Default is 200.
 
-    **Example**:
+**Example**:
 
-    ```bash
-    apptainer run \
-        -B /home/user/evaluator_data:/evaluator_data \
-        -B /home/user/predictions:/predictions \
-        kircher_evaluator.sif 172.17.0.2 5000 /predictions --sequence-length 300
-    ```
+```bash
+apptainer run \
+    -B /home/user/evaluator_data:/evaluator_data \
+    -B /home/user/predictions:/predictions \
+    kircher_evaluator.sif 172.17.0.2 5000 /predictions --sequence-length 300
+```
 
 
 ---

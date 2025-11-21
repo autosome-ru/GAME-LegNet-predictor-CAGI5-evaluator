@@ -11,6 +11,7 @@ This container provides a complete MPRALegNet Predictor implementation for regul
 - **Dependencies**: Complete Conda environment with all required packages
 
 > **Note**: The Conda environment (`legnet_environment.yml`) excludes PyTorch due to container build conflicts. PyTorch is installed manually in the container definition file.
+
 - Pretrained model weights used in this framework were downloaded from https://zenodo.org/records/10558183
 
 ## Usage
@@ -58,9 +59,9 @@ apptainer build legnet_predictor.sif predictor.def
 
 ## API Features
 
-- Supported Formats: JSON and MessagePack for request/response
+- **Supported Formats**: JSON and MessagePack for request/response
 
-- Endpoints:
+- **Endpoints**:
 
     - GET /help - API documentation and metadata
 
@@ -68,7 +69,7 @@ apptainer build legnet_predictor.sif predictor.def
 
     - POST /predict - Main prediction endpoint
 
-- Validation: Comprehensive request validation and error handling
+- **Validation**: Comprehensive request validation and error handling
 
 ## Example Usage
 ```bash
@@ -80,25 +81,32 @@ apptainer run --containall legnet_predictor.sif 127.0.0.1 5000
 ```
 ## Arguments
 
-- HOST: IP address or hostname that the predictor will bind to
+- **HOST**: IP address or hostname that the predictor will bind to
 
     - Use 0.0.0.0 to accept connections from any network interface
 
     - Use 127.0.0.1 for localhost-only access
 
-- PORT: Port number for the predictor service (typically 5000+)
+- **PORT**: Port number for the predictor service (typically 5000+)
 
 ## Model Specifications
 
-- Input: DNA sequences (200-2000 base pairs, 200 by default)
+- **Input**: DNA sequences (200-2000 base pairs, 200 by default).
 
-- Output: Linear or log-scale regulatory sequence activity predictions (log by default)
+- **Output**: Regulatory sequence activity predictions.
 
-- Supported Cell Types: K562, HepG2, WTC11
+- **Scale**: MPRALegNet is trained to predict log2(RNA/DNA) values, thus its 'native' predictions are in log2-scale. The conversion, if requested by an evaluator, is performed in the following way: 2^prediction.
 
-- Species: Homo sapiens only
+- **Supported Cell Types**: K562, HepG2, WTC11.
+
+- **Species**: Homo sapiens only.
+
+- **API Formats**: JSON and MessagePack support.
+
+- **Preprocessing**: Automatic adapter handling, sequence padding, one-hot encoding
 
 ## Security Notes
+
 - The `--containall` flag provides enhanced container isolation
 
 - No host directory mounts are required for normal operation

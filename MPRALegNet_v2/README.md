@@ -152,17 +152,19 @@ ls -la predictions/
 
 ## MPRALegNet Predictor Features
 
-- **Model Architecture**: LegNet deep learning model optimized for genomic sequences
+- **Model Architecture**: MPRALegNet deep learning model optimized for genomic sequences.
 
-- **Supported Cell Types**: K562 (lymphoblasts), HepG2 (hepatocytes), WTC11 (stem cells)
+- **Supported Cell Types**: K562 (lymphoblasts), HepG2 (hepatocytes), WTC11 (stem cells).
 
-- **Input**: DNA sequences (200-2000 base pairs, 200 by default)
+- **Input**: DNA sequences (200-2000 base pairs, 200 by default).
 
-- **Output**: Linear or log-scale regulatory sequence activity predictions (log-scale by default)
+- **Output**: Regulatory sequence activity predictions.
 
-- **API Formats**: JSON and MessagePack support
+- **Scale**: MPRALegNet is trained to predict log2(RNA/DNA) values, thus its 'native' predictions are in log2-scale. The conversion, if requested by an evaluator, is performed in the following way: 2^prediction.
 
-- **Preprocessing**: Automatic adapter handling, sequence padding, one-hot encoding
+- **API Formats**: JSON and MessagePack support.
+
+- **Preprocessing**: Automatic adapter handling, sequence padding, one-hot encoding.
 
 ## Test Evaluator Features
 
