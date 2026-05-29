@@ -2,6 +2,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 import os
+import sys
 import tqdm
 import torch
 import numpy as np
@@ -10,12 +11,18 @@ import numpy as np
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Determine if running inside a container or not
-if os.path.exists("/.singularity.d"):
-    # Running inside the container - use fixed container path
+if os.path.exists('/.singularity.d'):
+    # Running inside the container
     BASE_DIR = '/script_and_utils'
+    UTILS_DIR = '/script_and_utils'
 else:
-    # Running outside the container - use relative path to utils
+    # Running outside the container
+    # Get the current working directory
     BASE_DIR = SCRIPT_DIR
+    UTILS_DIR = SCRIPT_DIR
+
+# Add the directory containing `error_checking_functions.py` to the Python path
+sys.path.append(UTILS_DIR)
 
 # Import the process_sequence function
 from api_preprocessing_utils import process_sequence
@@ -61,11 +68,14 @@ def load_model(cell_type="k562", device="cpu"):
     """
 
     # Initialize LegNet model with architecture parameters
+    stem_ks = 5 if cell_type.lower() == "wtc11" else 11
+    ef_ks = 3 if cell_type.lower() == "wtc11" else 9
+
     model = LegNet(
         in_ch=4,
         stem_ch=64,
-        stem_ks=11,
-        ef_ks=9,
+        stem_ks=stem_ks, 
+        ef_ks=ef_ks,
         ef_block_sizes=[80, 96, 112, 128],
         pool_sizes=[2, 2, 2, 2] ,
         resize_factor=4,
@@ -103,12 +113,14 @@ def load_model(cell_type="k562", device="cpu"):
             new_key = key
         
         new_state_dict[new_key] = value
+    
 
     # Load the modified state_dict into model
     model.load_state_dict(new_state_dict)
 
     # Set model to evaluation mode for inference (disables dropout, batch norm in eval mode)
     model.eval()
+    
     print(f"Model for {cell_type} loaded!")
     return model
 
@@ -120,7 +132,7 @@ downstream_adapter_seq = "CATTGCGTGAACCGA"
 
 
 # Updated Prediction Function
-def predict_legnet(sequences, cell_type, scale, window_step=50):
+def predict_legnet(sequences, prediction_ranges, upstream_seq, downstream_seq, cell_type, scale, window_step=50):
     """
     Predict expression values using the MPRALegNet model for genomic sequences.
     
@@ -132,6 +144,11 @@ def predict_legnet(sequences, cell_type, scale, window_step=50):
     
     Args:
         sequences (dict): Dictionary mapping sequence IDs to DNA sequence strings
+        prediction_ranges (dict): A collection of key-value pairs, where the keys should be identical to sequence ID keys 
+                                    and values are arrays with the start and end region you want predictions for, within the provided sequence context. 
+                                    Start and end are 0 indexed and inclusive, respectively (e.g. [0,1] is the first two bases).
+        upstream_seq (str): Upstream flanking sequences to add to each sequence in sequences.
+        downstream_seq (str): Downstream flanking sequences to add to each sequence in sequences.
         cell_type (str): Target cell type for prediction ("k562", "hepg2", or "wtc11")
         scale (str): Requested scale. 'log' or 'linear'
         window_step (int): Step size for sliding window processing of long sequences (>200bp)
@@ -153,14 +170,27 @@ def predict_legnet(sequences, cell_type, scale, window_step=50):
     for seq_id, seq in tqdm.tqdm(
         sequences.items(), desc="Predictions in progress", unit="sequence"
     ):
+        
+        seq_specific_prediction_ranges = None
+        if prediction_ranges is not None:
+                seq_specific_prediction_ranges = prediction_ranges.get(seq_id) or None    
+
+        len_upstream_seq = len(upstream_seq) if upstream_seq is not None else 0
+        len_downstream_seq = len(downstream_seq) if downstream_seq is not None else 0
+        seq_size = len_upstream_seq + len(seq) + len_downstream_seq # Final sequence length with adapters
+        
+        
         # Process sequence through full preprocessing pipeline
         # Returns list of (encoded_seq, reversed_encoded_seq) tuples
         # - For short sequences: single tuple in list
         # - For long sequences: multiple tuples for each window
         processed_list = process_sequence(
             seq, 
+            seq_specific_prediction_ranges,
+            upstream_seq=upstream_seq,
+            downstream_seq=downstream_seq,
             target_length=200,      # Core sequence length without adapters
-            seq_size=230,           # Final sequence length with adapters (200 + 15 + 15)
+            seq_size=seq_size,           
             upstream_adapter=upstream_adapter_seq,
             downstream_adapter=downstream_adapter_seq, 
             window_step=window_step
