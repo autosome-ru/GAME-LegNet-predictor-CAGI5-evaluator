@@ -14,6 +14,7 @@ Stage: build
     script_and_utils/predictor_content_handler.py /script_and_utils/predictor_content_handler.py
     script_and_utils/predictor_help_message.json /script_and_utils/predictor_help_message.json
     script_and_utils/schema_validation.py /script_and_utils/schema_validation.py
+    script_and_utils/config.py /script_and_utils/config.py
     legnet_environment.yml /legnet_environment.yml
 
 %environment
