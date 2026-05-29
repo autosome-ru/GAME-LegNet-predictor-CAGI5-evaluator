@@ -148,22 +148,19 @@ def _calculate_correlations(
         print("=" * 50)
 
         # Create description and timestamp for results
-        description = f"Kircher Variant Effects ({element})"
+        description = f"Kircher Variant Effects ({element}), Cell_Type_Requested - {CELL_TYPES_NAMES[cell_type]}, Cell_Type_Actual - {results["cell_type_actual"]}"
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S.%f")
 
         # Format results for output
         all_task_correlation_results.append(
             {
-                "Evaluator": EVALUATOR_NAME,
-                "Description": description,
-                "Predictor_name": predictor_name,
-                "Time_stamp": timestamp,
-                "Cell_Type_requested": CELL_TYPES_NAMES[cell_type],
-                "Cell_Type_actual": results["cell_type_actual"],
-                "Element": element,
-                "Metric": "pearson_r",
-                "Value": str(pearson_r),
-                "Prediction_task(s)_data": str(results["metadata"]),
+                "evaluator_name": EVALUATOR_NAME,
+                "description": description,
+                "predictor_name": predictor_name,
+                "time_stamp": timestamp,
+                "metric": "pearson_r",
+                "value": str(pearson_r),
+                "prediction_task(s)_data": str(results["metadata"]),
             }
         )
 

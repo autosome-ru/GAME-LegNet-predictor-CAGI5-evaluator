@@ -192,10 +192,10 @@ def run_evaluator(predictor_ip, predictor_port, output_dir, length = 200):
         print("\n=== Correlation Summary ===")
         print(f"Total calculations: {len(all_correlations)}")
         print(
-            f"Average Pearson r: {evaluation_output['Value'].astype(float).mean():.4f}"
+            f"Average Pearson r: {evaluation_output['value'].astype(float).mean():.4f}"
         )
-        print(f"Min Pearson r: {evaluation_output['Value'].astype(float).min():.4f}")
-        print(f"Max Pearson r: {evaluation_output['Value'].astype(float).max():.4f}")
+        print(f"Min Pearson r: {evaluation_output['value'].astype(float).min():.4f}")
+        print(f"Max Pearson r: {evaluation_output['value'].astype(float).max():.4f}")
     else:
         print("No correlation results were calculated!")
 
