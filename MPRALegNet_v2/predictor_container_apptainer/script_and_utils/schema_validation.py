@@ -1,8 +1,10 @@
 # schema_validation.py
 """Validation and Preprocessing of Payload"""
-
+import numpy as np
 from error_checking_functions import *
 
+SUPPORTED_SCALES = ["linear", "log"]
+DEFAULT_SCALE = "log"
 
 def validate_request_payload(payload):
     """
@@ -42,18 +44,14 @@ def validate_request_payload(payload):
     errors = check_prediction_task_species(payload["prediction_tasks"], errors)
     errors = check_prediction_task_scale(payload["prediction_tasks"], errors)
 
-    if "prediction_ranges" in payload:
-        errors = check_seq_ids(
-            payload["prediction_ranges"], payload["sequences"], errors
-        )
-        errors = check_prediction_ranges(
-            payload["prediction_ranges"], payload["sequences"], errors
-        )
+    if 'prediction_ranges' in payload:
+        errors = check_seq_ids(payload['prediction_ranges'], payload['sequences'], errors)
+        errors = check_prediction_ranges(payload['prediction_ranges'], errors)
 
-    if "upstream_seq" in payload:
-        errors = check_key_values_upstream_flank(payload["upstream_seq"], errors)
-    if "downstream_seq" in payload:
-        errors = check_key_values_downstream_flank(payload["downstream_seq"], errors)
+    if 'upstream_seq' in payload:
+        errors = check_key_values_upstream_flank(payload['upstream_seq'], errors)
+    if 'downstream_seq' in payload:
+        errors = check_key_values_downstream_flank(payload['downstream_seq'], errors)
 
     if any(errors.values()):
         flagged_errors = [msg for sublist in errors.values() for msg in sublist]
@@ -81,16 +79,17 @@ def preprocess_data(payload):
     """
     sequences = payload.get("sequences", {})
 
-    # Model-specific: MPRALegNet has hardcoded adapter sequences and ignores
-    # flanking sequences from the request, but we inform the user about this
     if "upstream_seq" in payload or "downstream_seq" in payload:
         print(
-            "INFO: MPRALegNet has adapter sequences hardcoded and does not use flanking sequences from the request."
+            "INFO: Upstream/Downstream sequences found. They will be used to construct the biological context before cropping/padding."
         )
 
     # Check that the final sequences meet model specifications.
     # This includes character set.
-    errors = {"prediction_request_failed": []}
+    errors = {
+        'bad_prediction_request': [],
+        'prediction_request_failed': []
+        }
     errors = check_seqs_specifications(sequences, errors)
 
     # Model-specific: Validate readout type compatibility
@@ -107,6 +106,12 @@ def preprocess_data(payload):
         if task.get("species").lower() != "homo_sapiens":
             errors["bad_prediction_request"].append(
                 f"This predictor only supports species: homo_sapiens. Received '{task.get('species')}' for task '{task.get('name')}'."
+            )
+        
+        req_scale = task.get('scale')
+        if req_scale and req_scale.lower() not in SUPPORTED_SCALES:
+            errors['bad_prediction_request'].append(
+                f"Unsupported scale: '{req_scale}'. Supported scales are: {SUPPORTED_SCALES}."
             )
 
     # Raise errors if any model-specific validation checks failed

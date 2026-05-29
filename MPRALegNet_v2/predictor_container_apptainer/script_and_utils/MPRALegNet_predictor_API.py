@@ -5,39 +5,17 @@ import sys
 import json
 from flask import Flask
 
+from config import legnet_DIR, HELP_FILE, PREDICTOR_NAME, SUPPORTED_REQUEST_FORMATS, SUPPORTED_RESPONSE_FORMATS
 from error_checking_functions import *
 from schema_validation import *
 from predictor_content_handler import decode_request, encode_response
 
-# Get the absolute path of the script's directory
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Hardcode name of this Predictor. It will be added to ALL responses.
-PREDICTOR_NAME = "MPRALegNet"
-
-# Determine if running inside a container or not
-if os.path.exists("/.singularity.d"):
-    # Running inside the container
-    print("Running inside the container...🥡")
-    HELP_FILE = "/predictor_container_apptainer/predictor_help_message.json"
-else:
-    # Running outside the container
-    print("Running outside the container...📋")
-    PREDICTOR_CONTAINER_DIR = os.path.dirname(SCRIPT_DIR)
-    HELP_FILE = os.path.join(SCRIPT_DIR, "predictor_help_message.json")
-
 # Import the MPRALegNet prediction functions
-from MPRALegNet_predict import *
+from MPRALegNet_predict import predict_legnet
 
-# ------ Configuration for Wire-Format ------
-# Supported content types for request decoding
-SUPPORTED_REQUEST_FORMATS = [
-    fmt.lower() for fmt in ["application/json", "application/msgpack"]
-]
-# Supported content types for response encoding
-SUPPORTED_RESPONSE_FORMATS = [
-    fmt.lower() for fmt in ["application/json", "application/msgpack"]
-]  # JSON is always supported even when not mentioned. This is jsut to show that.
+# Add DREAM_DIR to the Python path
+if legnet_DIR not in sys.path:
+    sys.path.append(legnet_DIR)
 
 # --- Flask App and Central Error Handler ---
 app = Flask(__name__)
@@ -158,6 +136,11 @@ def predict():
         sequences = preprocess_data(evaluator_request)
         readout_type = evaluator_request.get("readout")
 
+        # ADDITION: Since we actually care about pred ranges, and upstream and downstream seqs
+        prediction_ranges = evaluator_request.get("prediction_ranges")
+        upstream_seq = evaluator_request.get("upstream_seq")
+        downstream_seq = evaluator_request.get("downstream_seq")
+
         # Initialize response structure
         json_return = {"prediction_tasks": []}
 
@@ -181,7 +164,7 @@ def predict():
             if readout_type == "point":
                 # Call MPRALegNet prediction function with sequences and cell type
                 # Uses sliding window with 50bp step for long sequences
-                model_predictions = predict_legnet(sequences, current_cell_type, current_scale, 50)
+                model_predictions = predict_legnet(sequences, prediction_ranges, upstream_seq, downstream_seq, current_cell_type, current_scale, 50)
             else:
                 # MPRALegNet only supports "point" readout type
                 raise PredictionFailedError(
