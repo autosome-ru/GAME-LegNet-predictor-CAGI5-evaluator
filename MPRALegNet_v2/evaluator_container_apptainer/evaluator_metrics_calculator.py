@@ -70,13 +70,13 @@ def _calculate_fake_specificity(task_results, predictor_name):
         fake_specificity_score = np.random.uniform(-1, 1) if is_pair_valid else "NaN"
         
         specificity_results.append({
-            "Evaluator": EVALUATOR_NAME,
-            "Description": f"MPRALegNet Test Evaluator ({cell_1} - {cell_2})",
-            "Predictor_name": predictor_name,
-            "Time_stamp": datetime.now(timezone.utc).isoformat(),
-            "Metric": "specificity_pearson_r",
-            "Value": str(fake_specificity_score),
-            'Prediction_tasks_data': str(task_results[cell_1]['metadata_no_preds']) + " - " + str(task_results[cell_2]['metadata_no_preds'])
+            "evaluator": EVALUATOR_NAME,
+            "description": f"MPRALegNet Test Evaluator ({cell_1} - {cell_2})",
+            "predictor_name": predictor_name,
+            "time_stamp": datetime.now(timezone.utc).isoformat(),
+            "metric": "specificity_pearson_r",
+            "value": str(fake_specificity_score),
+            'prediction_tasks_data': str(task_results[cell_1]['metadata_no_preds']) + " - " + str(task_results[cell_2]['metadata_no_preds'])
         })
         
     return specificity_results
