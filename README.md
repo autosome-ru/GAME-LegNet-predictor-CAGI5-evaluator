@@ -8,7 +8,8 @@
 
  - The implementation **(extracted genome sequences included to evaluator data)** and the usage instructions for Evaluator, which was built on top of the CAGI5 saturation mutagenesis MPRA data **(v2)**: [HERE](https://github.com/autosome-ru/GAME-LegNet-predictor-CAGI5-evaluator/tree/master/Kircher_2019_Evaluator_v2).
 
- - Pre-built containers hosted on [Hugging Face](https://huggingface.co/datasets/Ni-os/Kircher-container)
+ - Pre-built containers hosted on [Hugging Face](https://huggingface.co/datasets/Ni-os/Kircher-container) DOI: 10.57967/hf/906
+
  
 
 ## 2. MPRALegNet predictor
@@ -17,6 +18,6 @@
 
   - The implementation with **included pretrained weights** and the usage instructions for the MPRALegNet Predictor **(v2)**: [HERE](https://github.com/autosome-ru/GAME-LegNet-predictor-CAGI5-evaluator/tree/master/MPRALegNet_v2).
 
-  - Pre-built containers hosted on [Hugging Face](https://huggingface.co/Ni-os/MPRALegNet-container)
+  - Pre-built containers hosted on [Hugging Face](https://huggingface.co/Ni-os/MPRALegNet-container) DOI: 10.57967/hf/9061
 
   - Downloading instructions: [HERE](https://github.com/autosome-ru/GAME-LegNet-predictor-CAGI5-evaluator/tree/master/MPRALegNet_v2#step-1-download-containers-and-data)
