@@ -232,17 +232,16 @@ def predict_legnet(sequences, prediction_ranges, upstream_seq, downstream_seq, c
         # Aggregate predictions from all windows (for long sequences)
         if window_predictions:
             # Average predictions across all windows to get final sequence prediction
-            avg_prediction = np.mean(window_predictions, axis=0).tolist()
+            avg_prediction = np.mean(window_predictions, axis=0).item()
             
             # Convert to linear scale if requested
             if scale == 'linear':
                 # Since model was trained on log2(RNA/DNA), convert back using 2^prediction
-                avg_prediction = [2**x for x in avg_prediction]
-            
+                avg_prediction = 2**avg_prediction
             predictions[seq_id] = avg_prediction
         else:
             # Fallback for edge case with no predictions
             fallback_value = 0.0 if scale == 'log' else 1.0  # 2^0 = 1 in linear scale
-            predictions[seq_id] = [fallback_value]
+            predictions[seq_id] = fallback_value
 
     return predictions
