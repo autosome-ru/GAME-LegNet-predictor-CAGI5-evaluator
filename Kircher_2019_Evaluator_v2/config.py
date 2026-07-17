@@ -42,6 +42,21 @@ CELL_TYPES_NAMES = {
     "NIH-3T3": "mouse embryonic fibroblasts (NIH-3T3)",
 }
 
+CELL_TYPES_ORGANISM = {
+    "HepG2": "homo_sapiens",
+    "HEL92.1.7": "homo_sapiens",
+    "HEK293T": "homo_sapiens",
+    "K562": "homo_sapiens",
+    "SF7996": "homo_sapiens",
+    "HeLa": "homo_sapiens",
+    "SK-MEL-28": "homo_sapiens",
+    "HaCaT": "homo_sapiens",
+    "LNCaP": "homo_sapiens",
+    "Neuro-2a": "mus_musculus",
+    "MIN6": "mus_musculus",
+    "NIH-3T3": "mus_musculus",
+}
+
 # --- Directory Settings ---
 # Get the absolute path of the script's directory
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))

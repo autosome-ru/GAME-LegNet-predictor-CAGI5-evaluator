@@ -7,7 +7,7 @@ import pyfastx
 from collections import Counter
 import functools
 
-from config import CELL_TYPES_NAMES, EVALUATOR_DATA_DIR
+from config import CELL_TYPES_NAMES, CELL_TYPES_ORGANISM, EVALUATOR_DATA_DIR
 
 
 class DuplicateKeysError(ValueError):
@@ -262,7 +262,7 @@ def load_and_validate_data(cell_type, element, seq_length=200):
             "type": "expression",
             "cell_type": CELL_TYPES_NAMES[cell_type],
             "scale": "log",  # Model should return log-scale predictions
-            "species": "homo_sapiens",
+            "species": CELL_TYPES_ORGANISM[cell_type],
         }
     ]
 
