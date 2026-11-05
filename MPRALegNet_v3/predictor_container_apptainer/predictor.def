@@ -114,7 +114,7 @@ Stage: build
     - Architecture: MPRALegNet deep learning model
     - Input: DNA sequences (200-2000 base pairs)
     - Output: Log-scale expression predictions
-    - Supported formats: JSON and MessagePack
+    - Supported formats: JSON
     - Cell types: K562 (lymphoblasts), HepG2 (hepatocytes), WTC11 (stem cells)
 
     REQUIRED DIRECTORY STRUCTURE ON HOST:

@@ -59,7 +59,7 @@ apptainer build legnet_predictor.sif predictor.def
 
 ## API Features
 
-- **Supported Formats**: JSON and MessagePack for request/response
+- **Supported Formats**: JSON for request/response
 
 - **Endpoints**:
 
@@ -103,7 +103,7 @@ apptainer run --containall legnet_predictor.sif 127.0.0.1 5000
 
 - **Species**: Homo sapiens only. A task that requests another species, or a type other than `expression` or `expression_*`, is returned with null `*_actual` keys and a `prediction_request_failed` error in `predictions` (HTTP 200); the other tasks are still predicted.
 
-- **API Formats**: JSON and MessagePack support.
+- **API Formats**: JSON only.
 
 - **Preprocessing**: Automatic adapter handling, sequence padding, one-hot encoding
 
