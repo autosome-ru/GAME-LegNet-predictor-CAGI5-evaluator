@@ -268,7 +268,6 @@ def load_and_validate_data(cell_type, element, seq_length=200):
 
     # Build the complete evaluator object for predictor API
     evaluator_dict = {
-        "request": "predict",
         "readout": "point",  # Single value prediction per sequence
         "prediction_tasks": prediction_task,
         "sequences": variant_dict,
