@@ -146,7 +146,7 @@ def predict_legnet(sequences, prediction_ranges, upstream_seq, downstream_seq, c
         sequences (dict): Dictionary mapping sequence IDs to DNA sequence strings
         prediction_ranges (dict): A collection of key-value pairs, where the keys should be identical to sequence ID keys 
                                     and values are arrays with the start and end region you want predictions for, within the provided sequence context. 
-                                    Start and end are 0 indexed and inclusive, respectively (e.g. [0,1] is the first two bases).
+                                    Ranges are 0 indexed and half-open, like Python slicing (e.g. [0,2] is the first two bases).
         upstream_seq (str): Upstream flanking sequences to add to each sequence in sequences.
         downstream_seq (str): Downstream flanking sequences to add to each sequence in sequences.
         cell_type (str): Target cell type for prediction ("k562", "hepg2", or "wtc11")
