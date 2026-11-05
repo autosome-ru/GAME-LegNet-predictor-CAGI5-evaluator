@@ -77,7 +77,7 @@ The Kircher (2019) Evaluator is organized as follows:
         - Saves raw predictions and correlation results to mounted directories.
         - Appends the results of every run to one tab-separated summary file, `evaluation_summary_<evaluator_name>.csv`.
     6. **Scoring Rules**:
-        - A task is scored only if its predictions are for exactly the sequence IDs that were sent. A task with missing, extra or different IDs, a prediction that is not a finite number, or an `error` returned by the Predictor is recorded as `NaN`.
+        - Only the task for the requested cell type is scored. It is scored only if its predictions are for exactly the sequence IDs that were sent. A task with missing, extra or different IDs, a prediction that is not a finite number, a variant effect that cannot be calculated (for example a linear-scale prediction of 0 or below), or an `error` returned by the Predictor is recorded as `NaN`.
         - If the Predictor does not return a 200 OK status, `NaN` is recorded for that element.
         - If the predicted (or the measured) variant effects are all identical, the Pearson r is recorded as `0.0`.
         - Variants that were sent and predicted but have no measured value are left out of the correlation.
@@ -266,7 +266,7 @@ If you encounter permission errors during container build or execution:
 
         - Raw predictions: `{cell_type}_cell_type_{element}_element_*_predictions.json`
 
-        - Evaluation summary (tab-separated, appended across runs): `evaluation_summary_Kircher_{build timestamp}.csv`
+        - Evaluation summary (tab-separated, appended across runs): `evaluation_summary_Kircher_<YYYYMMDD-HHMMSS>_<TZ>.csv` (`Kircher` plus the container's build timestamp)
 
 5. **Verify Successful Execution**:
 
