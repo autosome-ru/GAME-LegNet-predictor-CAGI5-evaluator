@@ -1,0 +1,13 @@
+{
+  "model": "MPRALegNet",
+  "version": "1.0",
+  "publication" : "Penzar et. al, 2023",
+  "build_date": "October 9, 2025",
+  "features": ["expression"],
+  "cell_types" : ["HepG2", "K562", "WTC11"],
+  "species": ["homo_sapiens"],
+  "container_authors": ["Nikita Penzin", "Dmitry Penzar", "Ivan V Kulakovskiy", "Ilya Vorontsov"],
+  "model_authors": "Dmitry Penzar, Daria Nogina, Elizaveta Noskova, Arsenii Zinkevich, Georgy Meshcheryakov, Andrey Lando, Abdul Muntakim Rafi, Carl de Boer, Ivan V Kulakovskiy",
+  "input_size": 230,
+  "expression_strand_specific": "false"
+}
