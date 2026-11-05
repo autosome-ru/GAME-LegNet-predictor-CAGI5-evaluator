@@ -5,6 +5,44 @@ from error_checking_functions import *
 
 SUPPORTED_SCALES = ["linear", "log"]
 DEFAULT_SCALE = "log"
+# The species the model actually predicts for -- returned as `species_actual`.
+# `species` in a request is the species of the cells the experiment was performed in.
+MODEL_SPECIES = "homo_sapiens"
+
+def unsupported_task_reason(task):
+    """
+    Checks whether MPRALegNet can perform a single prediction task, based on its species and type.
+
+    A task MPRALegNet cannot perform does NOT fail the whole request: it is returned with
+    null `*_actual` keys and an error object in `predictions` (see Predictor API Schema),
+    while the other tasks are still predicted. (Any `cell_type` is accepted: K562, HepG2 and
+    WTC11 each have their own model; any other cell type is predicted with the K562 model and
+    reported as `cell_type_actual: "K562"`.)
+
+    Args:
+        task (dict): One object of `prediction_tasks` from the Evaluator request.
+
+    Returns:
+        str or None: A message describing why the task cannot be performed, or None if it can.
+    """
+    reasons = []
+
+    # --- MODEL SPECIFIC: MPRALegNet only supports homo_sapiens ---
+    if task.get('species', '').lower() != MODEL_SPECIES:
+        reasons.append(
+            f"This predictor only supports species: {MODEL_SPECIES}. Received '{task.get('species')}'."
+        )
+
+    # MPRALegNet predicts "expression" and the "expression_*" subtypes (e.g. expression_mRNA,
+    # expression_pol1, expression_pol2, expression_pol3 -- see API spec).
+    task_type = task.get('type', '')
+    if not (task_type == "expression" or task_type.startswith("expression_")):
+        reasons.append(
+            f"prediction type '{task_type}' is not supported by MPRALegNet. "
+            "Only 'expression' and 'expression_*' subtypes are accepted."
+        )
+
+    return " ".join(reasons) if reasons else None
 
 def validate_request_payload(payload):
     """
@@ -63,8 +101,8 @@ def preprocess_data(payload):
     Handles model-specific data preprocessing and validation.
 
     This function performs model-specific checks and preprocessing on the payload,
-    including sequence specifications, readout type compatibility, and species
-    restrictions. It ensures the data meets the specific requirements of the
+    including sequence specifications and readout type compatibility.
+    It ensures the data meets the specific requirements of the
     MPRALegNet model.
 
     Args:
@@ -72,7 +110,7 @@ def preprocess_data(payload):
 
     Raises:
         BadRequestError: If readout type is not supported
-        PredictionFailedError: If sequence specifications or species are invalid
+        PredictionFailedError: If sequence specifications are invalid
 
     Returns:
         dict: The processed sequences dictionary ready for model inference
@@ -100,14 +138,8 @@ def preprocess_data(payload):
             f"MPRALegNet cannot process '{readout_type}' readout type."
         )
 
-    # Model-specific: Ensure MPRALegNet Predictor only supports homo_sapiens
-    # Check all prediction tasks for species compatibility
+    # Task-level limitations (species, type) are handled per task by `unsupported_task_reason`.
     for task in payload["prediction_tasks"]:
-        if task.get("species").lower() != "homo_sapiens":
-            errors["bad_prediction_request"].append(
-                f"This predictor only supports species: homo_sapiens. Received '{task.get('species')}' for task '{task.get('name')}'."
-            )
-        
         req_scale = task.get('scale')
         if req_scale and req_scale.lower() not in SUPPORTED_SCALES:
             errors['bad_prediction_request'].append(

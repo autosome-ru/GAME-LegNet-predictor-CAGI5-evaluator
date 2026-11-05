@@ -146,6 +146,26 @@ def predict():
 
         # Process each prediction task in the request
         for task in evaluator_request["prediction_tasks"]:
+            # Tasks MPRALegNet cannot perform (unsupported species/type) are not predicted:
+            # they are returned with null *_actual keys and an error object instead.
+            unsupported_reason = unsupported_task_reason(task)
+            if unsupported_reason:
+                json_return["prediction_tasks"].append(
+                    {
+                        "name": task["name"],
+                        "type_requested": task["type"],
+                        "type_actual": None,
+                        "cell_type_requested": task["cell_type"],
+                        "cell_type_actual": None,
+                        "scale_prediction_requested": task.get("scale"),
+                        "scale_prediction_actual": None,
+                        "species_requested": task["species"],
+                        "species_actual": None,
+                        "predictions": {"error": [{"prediction_request_failed": unsupported_reason}]},
+                    }
+                )
+                continue
+
             # Determine cell type and scale for model selection
             # MPRALegNet supports K562, HepG2, and WTC11 cell types
             current_cell_type = "K562"  # Default fallback
@@ -155,7 +175,7 @@ def predict():
                     current_cell_type = possible_cell_type
                     
             # Default output scale (MPRALegNet model was trained on log2(RNA/DNA))
-            if task["scale"] in ["log", "linear"]:
+            if task.get("scale") in ["log", "linear"]:
                 current_scale = task["scale"]
             else:
                 current_scale = "log"
@@ -176,10 +196,10 @@ def predict():
                 {
                     "name": task["name"],                          # Task name from request
                     "type_requested": task["type"],                # Requested prediction type
-                    "type_actual": "expression",                   # Actual prediction type delivered
+                    "type_actual": ["expression"],                 # Actual prediction type delivered
                     "cell_type_requested": task["cell_type"],      # Requested cell type
                     "cell_type_actual": current_cell_type,         # Actual cell type used
-                    "scale_prediction_requested": task["scale"],   # Requested output scale
+                    "scale_prediction_requested": task.get("scale"),   # Requested output scale
                     "scale_prediction_actual": current_scale,      # Current output scale
                     "species_requested": task["species"],          # Requested species
                     "species_actual": "homo_sapiens",              # Actual species (MPRALegNet is human-specific)
