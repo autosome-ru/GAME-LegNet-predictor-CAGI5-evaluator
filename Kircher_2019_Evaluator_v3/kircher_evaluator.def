@@ -40,7 +40,7 @@ Stage: build
 
 %labels
     Authors "Nikita Penzin, Dmitry Penzar, Ivan V Kulakovskiy, Ilya Vorontsov"
-    Version "1.0"
+    game_schema_version "1.0"
     Description "This container is the Evaluator set up for Genomic API for Model Evaluation for CAGI5 dataset(Kircher et al., 2019). 
     The dataset is based on MPRA saturation mutagenesis results and includes 44,647 variants of regulatory elements tested in various cell lines."
 
