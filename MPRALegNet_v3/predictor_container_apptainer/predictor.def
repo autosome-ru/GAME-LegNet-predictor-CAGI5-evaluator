@@ -90,7 +90,7 @@ Stage: build
 
 %labels
     Authors "Nikita Penzin, Dmitry Penzar, Ivan V Kulakovskiy, Ilya Vorontsov"
-    Version "1.0"
+    game_schema_version "1.0"
     Description "MPRALegNet Predictor Container for Genomic Sequence Expression Prediction"
     Model "MPRALegNet"
     Framework "PyTorch with CUDA support"
