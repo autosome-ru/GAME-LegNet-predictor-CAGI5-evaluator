@@ -118,19 +118,27 @@ def run_evaluator(predictor_ip, predictor_port, output_dir, length = 200):
                     ],
                 }
 
+            if not isinstance(response_payload, dict):
+                # A response body that is not a JSON object cannot be processed
+                response_payload = {
+                    "predictor_name": "UnknownPredictor_BadResponse",
+                    "error": [{"evaluator_error": "The Predictor response is not a JSON object."}],
+                }
+
             # Save predictions to file with descriptive filename
-            predictor_name = response_payload.get(
-                "predictor_name", "UnknownPredictor"
+            predictor_name = str(
+                response_payload.get("predictor_name") or "UnknownPredictor"
             ).replace(" ", "_")
             output_filename_base = f"{cell_type}_cell_type_{element}_element_{config.EVALUATOR_NAME}_predictions"
             output_filename = f"{output_filename_base}_from_{predictor_name}.json"
             saved_predictions_path = os.path.join(output_dir, output_filename)
 
             # Validate that predictor returned correct number of predictions
-            for i, task in enumerate(
-                response_payload.get("prediction_tasks", []), start=1
-            ):
-                preds = task.get("predictions", [])
+            tasks = response_payload.get("prediction_tasks")
+            for i, task in enumerate(tasks if isinstance(tasks, list) else [], start=1):
+                preds = task.get("predictions") if isinstance(task, dict) else None
+                if not isinstance(preds, dict) or "error" in preds:
+                    continue
                 if len(preds) != total_sequences:
                     print(
                         f"Warning: Task {i} ('{task.get('name')}') has {len(preds)} predictions, but {total_sequences} sequences were sent to the Predictor."
