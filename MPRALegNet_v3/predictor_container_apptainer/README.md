@@ -93,7 +93,7 @@ apptainer run --containall legnet_predictor.sif 127.0.0.1 5000
 
 - **Input**: DNA sequences (200-2000 base pairs, 200 by default). Bases can be upper or lower case.
 
-- **Prediction ranges**: `prediction_ranges` are 0-indexed and half-open, like Python slicing (`[start, end)` with `start < end`; `[0, 2]` is the first two bases). They are used only for a sequence longer than 200 bp that comes without upstream/downstream flanks: the start of the range is taken as the transcription start site, and the model reads the 200 bp that end 145 bp upstream of it. In every other case the ranges are not used (a sequence longer than 200 bp is scored with overlapping 200 bp windows, averaged).
+- **Prediction ranges**: `prediction_ranges` are 0-indexed and half-open, like Python slicing (`[start, end)` with `start < end`; `[0, 2]` is the first two bases). They are used only for a sequence longer than 200 bp that comes without a non-empty upstream/downstream flank: `start` is taken as the transcription start site, and the model reads the 200 bp that end 145 bp upstream of it (`seq[start-345:start-145]`; if `start` is below 345, the first 200 bp). `end` does not change the window. In every other case the ranges are not used (a sequence longer than 200 bp is scored with overlapping 200 bp windows, and the log2 predictions are averaged).
 
 - **Output**: Regulatory sequence activity predictions.
 
