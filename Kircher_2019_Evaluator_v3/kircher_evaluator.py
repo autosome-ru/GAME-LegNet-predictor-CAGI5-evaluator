@@ -148,31 +148,32 @@ def run_evaluator(predictor_ip, predictor_port, output_dir, length = 200):
                 )
                 return
 
-            # Calculate evaluation metrics only for successful responses
-            if is_success_response:
-                # Path to measured experimental values for comparison
-                file_path = os.path.join(
-                    config.EVALUATOR_DATA_DIR, cell_type, f"{element}_variants.tsv"
-                )
-
-                # Calculate correlation between predictions and experimental measurements
-                corellation_results = (
-                    evaluator_metrics_calculator.calculate_and_save_metrics(
-                        predictions_content=response_payload,
-                        measured_values_path=file_path,
-                        cell_type=cell_type,
-                        element=element,
-                    )
-                )
-
-                if corellation_results:
-                    all_correlations.extend(corellation_results)
-
-            else:
-                # Skip metrics calculation for failed predictor responses
+            # Calculate evaluation metrics. A task is only scored if its predictions are for exactly the sequences
+            # that were sent; metrics that cannot be calculated (a task with an error, incomplete predictions, or
+            # the Predictor not returning a 200 OK status) are recorded as "NaN".
+            if not is_success_response:
                 print(
-                    "Skipping metrics calculation because the Predictor did not return a 200 OK status."
+                    "The Predictor did not return a 200 OK status: the metric will be recorded as NaN."
                 )
+
+            # Path to measured experimental values for comparison
+            file_path = os.path.join(
+                config.EVALUATOR_DATA_DIR, cell_type, f"{element}_variants.tsv"
+            )
+
+            # Calculate correlation between predictions and experimental measurements
+            corellation_results = (
+                evaluator_metrics_calculator.calculate_and_save_metrics(
+                    predictions_content=response_payload,
+                    measured_values_path=file_path,
+                    cell_type=cell_type,
+                    element=element,
+                    sequence_ids=data_dict["sequences"].keys(),
+                )
+            )
+
+            if corellation_results:
+                all_correlations.extend(corellation_results)
 
     # Generate final summary report if we have correlation results
     if all_correlations:

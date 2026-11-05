@@ -11,7 +11,7 @@ from config import CELL_TYPES_NAMES, EVALUATOR_NAME
 
 
 def calculate_and_save_metrics(
-    predictions_content, measured_values_path, cell_type=None, element=None
+    predictions_content, measured_values_path, cell_type=None, element=None, sequence_ids=None
 ):
     """
     Calculates custom evaluation metrics by comparing model predictions with experimental measurements.
@@ -29,9 +29,12 @@ def calculate_and_save_metrics(
         cell_type (str or list): Cell type(s) to filter variants by.
         element (str or list): Genomic element type(s) to filter by
                                         (e.g., 'promoter', 'enhancer').
+        sequence_ids (keys, optional): IDs of the sequences sent to the Predictor, in the order sent. If given,
+                                  a task is only scored if its predictions are for exactly these sequences.
 
     Returns:
         list: A list of dictionaries containing correlation results for each prediction task.
+              A metric that cannot be calculated is recorded as "NaN".
     """
 
     print("----- Starting Evaluation Calculation -----")
@@ -41,12 +44,10 @@ def calculate_and_save_metrics(
         predictor_name = predictions_content.get("predictor_name", "Unknown")
         all_tasks = predictions_content.get("prediction_tasks", [])
 
-        # Validate that prediction tasks exist and contain predictions
-        if not all_tasks or any(not task.get("predictions") for task in all_tasks):
-            print(
-                "WARNING: 'prediction_tasks' key missing, empty, or one of the tasks has empty predictions."
-            )
-            return
+        # An error response (e.g. an HTTP error) has no prediction tasks: record "NaN" for this cell type and element
+        if not all_tasks:
+            print("WARNING: 'prediction_tasks' key missing or empty. The metric will be recorded as NaN.")
+            all_tasks = [{"cell_type_requested": CELL_TYPES_NAMES[cell_type]}]
 
         # Pre-computation: Validate all tasks *once*
         # This map stores whether each task is valid and its metadata
@@ -59,10 +60,16 @@ def calculate_and_save_metrics(
             predictions = task.get("predictions", {})
             task_valid = True  # Assume valid until proven otherwise
 
-            # Check if task contains errors
-            if "error" in predictions:
+            # Check if task contains errors or has no predictions
+            if not isinstance(predictions, dict) or not predictions or "error" in predictions:
                 print(
-                    f"- Task (Cell: {task_name}): Found 'error' in predictions. Marking as invalid."
+                    f"- Task (Cell: {task_name}): Found 'error' or no predictions. Marking as invalid."
+                )
+                task_valid = False
+            # Predictions must be for exactly the sequences that were sent (not fewer, and no extra or different IDs)
+            elif sequence_ids is not None and predictions.keys() != set(sequence_ids):
+                print(
+                    f"- Task (Cell: {task_name}): Predictions are not for exactly the {len(sequence_ids)} sequences that were sent. Marking as invalid."
                 )
                 task_valid = False
 
@@ -85,6 +92,7 @@ def calculate_and_save_metrics(
             predictor_name=predictor_name,
             cell_type=cell_type,
             element=element,
+            sequence_ids=sequence_ids,
         )
 
         return correlation_results
@@ -100,7 +108,7 @@ def calculate_and_save_metrics(
 
 
 def _calculate_correlations(
-    predictions_content, measured_values_path, predictor_name, cell_type, element
+    predictions_content, measured_values_path, predictor_name, cell_type, element, sequence_ids=None
 ):
     """
     Calculate Pearson correlations for each prediction task.
@@ -114,6 +122,7 @@ def _calculate_correlations(
         predictor_name (str): Name of the predictor/model being evaluated
         cell_type (str or list, optional): Cell type filter
         element (str or list, optional): Genomic element filter
+        sequence_ids (keys, optional): IDs of the sequences sent to the Predictor, in the order sent
 
     Returns:
         list: Formatted correlation results for all tasks
@@ -134,6 +143,7 @@ def _calculate_correlations(
                 scale_prediction_actual=scale_prediction_actual,
                 cell_type=cell_type,
                 element=element,
+                sequence_ids=sequence_ids,
             )
             if results["is_valid"]
             else float("nan")
@@ -159,7 +169,8 @@ def _calculate_correlations(
                 "predictor_name": predictor_name,
                 "time_stamp": timestamp,
                 "metric": "pearson_r",
-                "value": str(pearson_r),
+                # A metric that could not be calculated is recorded as "NaN"
+                "value": "NaN" if pearson_r is None or not np.isfinite(pearson_r) else str(pearson_r),
                 "prediction_task(s)_data": str(results["metadata"]),
             }
         )
@@ -173,6 +184,7 @@ def calculate_pearson_r(
     scale_prediction_actual,
     cell_type,
     element,
+    sequence_ids=None,
 ):
     """
     Calculate Pearson correlation between predicted and measured variant effects.
@@ -190,6 +202,7 @@ def calculate_pearson_r(
                                       predictions, 'linear' or None for linear-scale
         cell_type (str or list, optional): Cell type(s) to filter variants by
         element (str or list, optional): Genomic element type(s) to filter by
+        sequence_ids (keys, optional): IDs of the sequences sent to the Predictor, in the order sent
 
     Returns:
         float: Pearson correlation coefficient between predicted and measured variant effects,
@@ -212,10 +225,24 @@ def calculate_pearson_r(
         list(predictions_dict.items()), columns=["id_column", "Predicted_Value"]
     )
 
+    # Put the predictions in the order the sequences were sent (reference, then alternate, for each variant),
+    # whatever order the Predictor returned them in
+    if sequence_ids is not None:
+        predictions_df = predictions_df.set_index("id_column").loc[list(sequence_ids)].reset_index()
+
     # Extract single value if predictions are in list format
     predictions_df["Predicted_Value"] = predictions_df["Predicted_Value"].apply(
         lambda x: x[0] if isinstance(x, list) and len(x) > 0 else x
     )
+
+    # A prediction that is not a finite number invalidates the task, so that a Predictor cannot choose
+    # which variants are scored by leaving some out
+    predictions_df["Predicted_Value"] = pd.to_numeric(
+        predictions_df["Predicted_Value"], errors="coerce"
+    ).replace([np.inf, -np.inf], np.nan)
+    if predictions_df["Predicted_Value"].isna().any():
+        print("WARNING: Some predictions are not finite numbers. Skipping evaluation calculation for this task.")
+        return None
 
     # Calculate variant effects based on prediction scale
     if scale_prediction_actual == "log":
@@ -298,10 +325,15 @@ def calculate_pearson_r(
         print("WARNING: No overlapping variants found after merging and cleaning")
         return None
 
+    # Valid predictions (or measurements) that do not vary have no correlation: 0.0, not NaN
+    if merged_data["Value_predicted"].std() == 0 or merged_data["Value"].std() == 0:
+        print("WARNING: The predicted or the measured variant effects do not vary. Pearson r = 0.0")
+        return 0.0
+
     # Calculate Pearson correlation between predicted and measured variant effects
     try:
         r, p_value = pearsonr(merged_data["Value"], merged_data["Value_predicted"])
-        return r
+        return 0.0 if np.isnan(r) else float(r)
     except Exception as e:
         print(f"Error calculating Pearson correlation: {e}")
         return None
