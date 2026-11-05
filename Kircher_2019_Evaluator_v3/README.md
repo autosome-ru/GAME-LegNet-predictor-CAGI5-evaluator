@@ -75,7 +75,12 @@ The Kircher (2019) Evaluator is organized as follows:
         - Supports both linear-scale and log-scale model outputs.
     5. **Output Management**:
         - Saves raw predictions and correlation results to mounted directories.
-        - Generates comprehensive summary reports with timestamps.
+        - Appends the results of every run to one tab-separated summary file, `evaluation_summary_<evaluator_name>.csv`.
+    6. **Scoring Rules**:
+        - A task is scored only if its predictions are for exactly the sequence IDs that were sent. A task with missing, extra or different IDs, a prediction that is not a finite number, or an `error` returned by the Predictor is recorded as `NaN`.
+        - If the Predictor does not return a 200 OK status, `NaN` is recorded for that element.
+        - If the predicted (or the measured) variant effects are all identical, the Pearson r is recorded as `0.0`.
+        - Variants that were sent and predicted but have no measured value are left out of the correlation.
 
 ---
 
@@ -84,7 +89,6 @@ The Kircher (2019) Evaluator is organized as follows:
 The Evaluator sends JSON payloads with the following structure:
 ```json
 {
-    "request": "predict",
     "readout": "point",
     "prediction_tasks": [
         {
@@ -262,11 +266,11 @@ If you encounter permission errors during container build or execution:
 
         - Raw predictions: `{cell_type}_cell_type_{element}_element_*_predictions.json`
 
-        - Correlation summary: `correlation_summary_Kircher_{timestamp}.tsv`
+        - Evaluation summary (tab-separated, appended across runs): `evaluation_summary_Kircher_{build timestamp}.csv`
 
 5. **Verify Successful Execution**:
 
-    Check the predictions directory for output files and review the correlation summary for evaluation results.
+    Check the predictions directory for output files and review the evaluation summary for evaluation results.
 
 ## 4. EXTRAS
  
