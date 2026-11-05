@@ -91,15 +91,17 @@ apptainer run --containall legnet_predictor.sif 127.0.0.1 5000
 
 ## Model Specifications
 
-- **Input**: DNA sequences (200-2000 base pairs, 200 by default).
+- **Input**: DNA sequences (200-2000 base pairs, 200 by default). Bases can be upper or lower case.
+
+- **Prediction ranges**: `prediction_ranges` are 0-indexed and half-open, like Python slicing (`[start, end)` with `start < end`; `[0, 2]` is the first two bases). They are used only for a sequence longer than 200 bp that comes without upstream/downstream flanks: the start of the range is taken as the transcription start site, and the model reads the 200 bp that end 145 bp upstream of it. In every other case the ranges are not used (a sequence longer than 200 bp is scored with overlapping 200 bp windows, averaged).
 
 - **Output**: Regulatory sequence activity predictions.
 
-- **Scale**: MPRALegNet is trained to predict log2(RNA/DNA) values, thus its 'native' predictions are in log2-scale. The conversion, if requested by an evaluator, is performed in the following way: 2^prediction.
+- **Scale**: MPRALegNet is trained to predict log2(RNA/DNA) values, thus its 'native' predictions are in log2-scale. The conversion, if requested by an evaluator, is performed in the following way: 2^prediction. If no scale is requested, log2 is returned; `scale_prediction_actual` states the scale that was used.
 
-- **Supported Cell Types**: K562, HepG2, WTC11.
+- **Supported Cell Types**: K562, HepG2, WTC11. Any other requested cell type is predicted with the K562 model, and the response states this in `cell_type_actual`.
 
-- **Species**: Homo sapiens only.
+- **Species**: Homo sapiens only. A task that requests another species, or a type other than `expression` or `expression_*`, is returned with null `*_actual` keys and a `prediction_request_failed` error in `predictions` (HTTP 200); the other tasks are still predicted.
 
 - **API Formats**: JSON and MessagePack support.
 
