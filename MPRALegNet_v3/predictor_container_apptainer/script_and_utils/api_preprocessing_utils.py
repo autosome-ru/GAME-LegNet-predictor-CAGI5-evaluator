@@ -375,6 +375,12 @@ def process_sequence(
         4. One-hot encode the final sequence
     """
 
+    # Bases may arrive in lower case (the request validation accepts them): upper-case the sequence and
+    # the flanks once so that the adapters, the padding and the encoding all see upper case.
+    seq = seq.upper()
+    upstream_seq = upstream_seq.upper() if upstream_seq is not None else None
+    downstream_seq = downstream_seq.upper() if downstream_seq is not None else None
+
     # First check if constant flanks are provided
     flanks_provided = bool(upstream_seq) or bool(downstream_seq)
 
