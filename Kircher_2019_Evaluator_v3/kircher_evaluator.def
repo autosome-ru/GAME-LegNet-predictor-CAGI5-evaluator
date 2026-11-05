@@ -1,0 +1,104 @@
+Bootstrap: docker
+From: python:3.13-slim
+Stage: build
+
+%files
+    config.py /Kircher_2019_Evaluator/config.py
+    data_loader.py /Kircher_2019_Evaluator/data_loader.py
+    evaluator_content_handler.py /Kircher_2019_Evaluator/evaluator_content_handler.py
+    evaluator_metrics_calculator.py /Kircher_2019_Evaluator/evaluator_metrics_calculator.py
+    kircher_evaluator.py /Kircher_2019_Evaluator/kircher_evaluator.py
+
+%environment
+    # Prevent automatic binding of host directories
+    export APPTAINER_NO_MOUNT="home,tmp,proc,sys,dev"
+    export LC_ALL=C
+    export PATH="/usr/local/bin:$PATH"
+    export PYTHONPATH="/Kircher_2019_Evaluator:$PYTHONPATH"
+
+%post
+    # Install system packages and dependencies
+    echo "Installing system dependencies..."
+    apt-get update && \
+    apt-get install -y --no-install-recommends wget gzip python3-pip bzip2 ca-certificates && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+    echo "Installing Python dependencies..."
+    python -m pip install --upgrade pip
+    python -m pip install --no-cache-dir numpy tqdm pandas openpyxl msgpack scipy pyfastx flask requests
+
+    # Set permissions to access all directories
+    echo "Setting permissions for directories and script..."
+    chmod -R 755 /Kircher_2019_Evaluator
+
+%runscript
+    # This section defines the default run behavior of the container
+    exec python3 /Kircher_2019_Evaluator/kircher_evaluator.py "$@"
+
+%startscript
+    exec python3 /Kircher_2019_Evaluator/kircher_evaluator.py "$@"
+
+%labels
+    Authors "Nikita Penzin, Dmitry Penzar, Ivan V Kulakovskiy, Ilya Vorontsov"
+    game_schema_version "1.0"
+    Description "This container is the Evaluator set up for Genomic API for Model Evaluation for CAGI5 dataset(Kircher et al., 2019). 
+    The dataset is based on MPRA saturation mutagenesis results and includes 44,647 variants of regulatory elements tested in various cell lines."
+
+%help
+    This container implements the Kircher 2019 Evaluator for genomic variant effect prediction.
+    
+    The evaluator:
+    - Processes genomic sequences with variants (SNPs and deletions)
+    - Communicates with predictors via REST API
+    - Calculates Pearson correlations between predicted and experimental variant effects
+    - Supports multiple cell types (K562, HepG2, etc) and genomic elements (promoters, enhancers)
+
+    **Usage:**
+    We encourage using pre-built containers for this model that are hosted on Zenodo.
+
+    However, if you are building the container using this definition file, ensure you have the following directory structure on the host:
+    
+    ```
+    /path/to/Kircher_2019_Evaluator/
+    ├── evaluator_data/                 # Input data directory (must be mounted)
+    ├── predictions/                    # Output directory (must be mounted)
+    ├── config.py                       # Configuration file
+    ├── data_loader.py                  # Data loading and validation
+    ├── evaluator_content_handler.py    # API communication handlers
+    ├── evaluator_metrics_calculator.py # Correlation calculations
+    ├── kircher_evaluator.def           # This definition file
+    ├── kircher_evaluator.py            # Main evaluator script
+    └── README.md
+    ```
+
+    **Building the Container:**
+    ```bash
+    apptainer build evaluator.sif kircher_evaluator.def
+    ```
+
+    **Running the Container:**
+    ```bash
+    apptainer run \
+      -B /absolute/path/to/evaluator_data:/evaluator_data \
+      -B /absolute/path/to/predictions:/predictions \
+      evaluator.sif PREDICTOR_HOST PREDICTOR_PORT /predictions
+    ```
+
+    **Example Command:**
+    ```bash
+    apptainer run --containall \
+      -B /home/user/evaluator_data:/evaluator_data \
+      -B /home/user/predictions:/predictions \
+      evaluator.sif 172.17.0.2 5000 /predictions
+    ```
+
+    **Arguments:**
+    1. `PREDICTOR_HOST`: IP address or hostname of the Predictor server (e.g., 172.17.0.2)
+    2. `PREDICTOR_PORT`: Port number the Predictor is listening on (e.g., 5000)
+    3. `/predictions`: Output directory path inside container (mounted from host)
+
+    **Important Notes:**
+    - The evaluator_data directory must contain the required TSV files with genomic variants
+    - The predictor container must be running and accessible at the specified host:port
+    - Output includes correlation results and raw predictions in the mounted predictions directory
+    - Supports hg38 reference genome 
