@@ -109,8 +109,7 @@ def preprocess_data(payload):
         payload (dict): The validated request payload to preprocess
 
     Raises:
-        BadRequestError: If readout type is not supported
-        PredictionFailedError: If sequence specifications are invalid
+        PredictionFailedError: If the readout type is not supported or sequence specifications are invalid
 
     Returns:
         dict: The processed sequences dictionary ready for model inference
@@ -134,7 +133,7 @@ def preprocess_data(payload):
     # MPRaLegNet only supports "point" readout, not "track" or "interaction_matrix"
     readout_type = payload["readout"]
     if not readout_type in ["point"]:
-        raise BadRequestError(
+        raise PredictionFailedError(
             f"MPRALegNet cannot process '{readout_type}' readout type."
         )
 
