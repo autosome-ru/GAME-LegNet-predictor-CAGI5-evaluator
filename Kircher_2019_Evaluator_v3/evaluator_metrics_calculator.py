@@ -41,12 +41,21 @@ def calculate_and_save_metrics(
 
     try:
         # Extract predictor name and prediction tasks from input
-        predictor_name = predictions_content.get("predictor_name", "Unknown")
+        predictor_name = predictions_content.get("predictor_name") or "Unknown"
         all_tasks = predictions_content.get("prediction_tasks", [])
 
-        # An error response (e.g. an HTTP error) has no prediction tasks: record "NaN" for this cell type and element
+        # Only the task that was requested is scored
+        if not isinstance(all_tasks, list):
+            all_tasks = []
+        all_tasks = [
+            task for task in all_tasks
+            if isinstance(task, dict) and task.get("cell_type_requested") == CELL_TYPES_NAMES[cell_type]
+        ]
+
+        # An error response (e.g. an HTTP error) or a response without the requested task: record "NaN" for this
+        # cell type and element
         if not all_tasks:
-            print("WARNING: 'prediction_tasks' key missing or empty. The metric will be recorded as NaN.")
+            print("WARNING: No prediction task for the requested cell type. The metric will be recorded as NaN.")
             all_tasks = [{"cell_type_requested": CELL_TYPES_NAMES[cell_type]}]
 
         # Pre-computation: Validate all tasks *once*
@@ -136,18 +145,21 @@ def _calculate_correlations(
         scale_prediction_actual = results.get("scale_prediction_actual", "linear")
 
         # Calculate Pearson correlation for valid tasks, return NaN for invalid ones
-        pearson_r = (
-            calculate_pearson_r(
-                predictions_content=results,
-                measured_values_path=measured_values_path,
-                scale_prediction_actual=scale_prediction_actual,
-                cell_type=cell_type,
-                element=element,
-                sequence_ids=sequence_ids,
-            )
-            if results["is_valid"]
-            else float("nan")
-        )
+        pearson_r = float("nan")
+        if results["is_valid"]:
+            try:
+                pearson_r = calculate_pearson_r(
+                    predictions_content=results,
+                    measured_values_path=measured_values_path,
+                    scale_prediction_actual=scale_prediction_actual,
+                    cell_type=cell_type,
+                    element=element,
+                    sequence_ids=sequence_ids,
+                )
+            except Exception as e:
+                # Predictions that cannot be processed are recorded as "NaN" instead of losing the row
+                print(f"WARNING: Could not calculate Pearson r: {e}", file=sys.stderr)
+                pearson_r = None
 
         # Print correlation results for monitoring
         print(f"----- Calculated Pearson r: ----- ")
@@ -171,7 +183,7 @@ def _calculate_correlations(
                 "metric": "pearson_r",
                 # A metric that could not be calculated is recorded as "NaN"
                 "value": "NaN" if pearson_r is None or not np.isfinite(pearson_r) else str(pearson_r),
-                "prediction_task(s)_data": str(results["metadata"]),
+                "prediction_task(s)_data": str([results["metadata"]]),
             }
         )
 
@@ -239,7 +251,7 @@ def calculate_pearson_r(
     # which variants are scored by leaving some out
     predictions_df["Predicted_Value"] = pd.to_numeric(
         predictions_df["Predicted_Value"], errors="coerce"
-    ).replace([np.inf, -np.inf], np.nan)
+    ).astype(float).replace([np.inf, -np.inf], np.nan)
     if predictions_df["Predicted_Value"].isna().any():
         print("WARNING: Some predictions are not finite numbers. Skipping evaluation calculation for this task.")
         return None
@@ -259,16 +271,15 @@ def calculate_pearson_r(
         ref_values = predictions_df["Predicted_Value"].iloc[0::2].values
         alt_values = predictions_df["Predicted_Value"].iloc[1::2].values
 
-        # Avoid division by zero
-        with np.errstate(divide="ignore", invalid="ignore"):
-            value_predicted = np.log2(
-                np.divide(alt_values, ref_values, where=ref_values != 0)
-            )
+        # A ratio that cannot be calculated (a prediction of 0 or below) is not finite: caught below
+        with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
+            value_predicted = np.log2(alt_values / ref_values)
 
-        # Replace infinite values with NaN for clean processing
-        value_predicted = np.where(
-            np.isfinite(value_predicted), value_predicted, np.nan
-        )
+    # A variant effect that cannot be calculated invalidates the task, so that a Predictor cannot choose
+    # which variants are scored
+    if not np.isfinite(value_predicted).all():
+        print("WARNING: Some predicted variant effects are not finite. Skipping evaluation calculation for this task.")
+        return None
 
     # Create a results DataFrame with reference/alternative pairs and calculated variant effects
     delta_df = pd.DataFrame(
