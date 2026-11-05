@@ -179,12 +179,15 @@ def run_evaluator(predictor_ip, predictor_port, output_dir, length = 200):
     if all_correlations:
         evaluation_output = pd.DataFrame(all_correlations)
 
-        # Create timestamped output filename
-        correlation_summary_filepath = f"correlation_summary_{config.EVALUATOR_NAME}_{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}.tsv"
-        full_output_path = os.path.join(output_dir, correlation_summary_filepath)
+        # One tab-separated summary file per evaluator build, appended across runs
+        evaluation_summary_filepath = f"evaluation_summary_{config.EVALUATOR_NAME}.csv"
+        full_output_path = os.path.join(output_dir, evaluation_summary_filepath)
+        summary_file_exists = os.path.isfile(full_output_path)
 
         print(f"Saving ALL correlations to: {full_output_path}")
-        evaluation_output.to_csv(full_output_path, sep="\t", index=False)
+        evaluation_output.to_csv(
+            full_output_path, sep="\t", index=False, mode="a", header=not summary_file_exists
+        )
         print(
             f"Successfully saved {len(all_correlations)} correlation results to {full_output_path}"
         )
